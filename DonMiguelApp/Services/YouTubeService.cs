@@ -31,6 +31,40 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
             uploads);
     }
 
+
+    public async Task<VideoItem?> GetLatestVideoAsync(CancellationToken ct)
+    {
+        EnsureConfigured();
+        var channel = await GetChannelAsync(ct);
+        if (channel is null || string.IsNullOrWhiteSpace(channel.UploadsPlaylistId)) return null;
+
+        var url = $"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId={Uri.EscapeDataString(channel.UploadsPlaylistId)}&maxResults=1&key={Uri.EscapeDataString(_apiKey)}";
+        using var page = await GetJsonAsync(url, ct);
+        var item = page.RootElement.GetProperty("items").EnumerateArray().FirstOrDefault();
+        if (item.ValueKind == JsonValueKind.Undefined) return null;
+
+        var snippet = item.GetProperty("snippet");
+        var id = item.GetProperty("contentDetails").GetProperty("videoId").GetString() ?? "";
+        if (string.IsNullOrWhiteSpace(id)) return null;
+
+        var detailsMap = await GetVideoDetailsAsync(new[] { id }, ct);
+        var details = detailsMap.GetValueOrDefault(id, new VideoDetails("", 0));
+        var published = snippet.TryGetProperty("publishedAt", out var p) &&
+                        DateTimeOffset.TryParse(p.GetString(), out var dt)
+            ? dt
+            : DateTimeOffset.MinValue;
+
+        return new VideoItem(
+            id,
+            snippet.GetProperty("title").GetString() ?? "",
+            snippet.TryGetProperty("description", out var desc) ? desc.GetString() ?? "" : "",
+            BestThumbnail(snippet.GetProperty("thumbnails")),
+            published,
+            details.Duration,
+            snippet.TryGetProperty("channelTitle", out var c) ? c.GetString() ?? channel.Title : channel.Title,
+            details.ViewCount);
+    }
+
     public async Task<IReadOnlyList<VideoItem>> GetVideosAsync(CancellationToken ct)
     {
         EnsureConfigured();

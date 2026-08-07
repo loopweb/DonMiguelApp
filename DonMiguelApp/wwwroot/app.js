@@ -98,10 +98,10 @@ async function load(){
     if(!status.configured)throw new Error('YouTube API key is not configured.');
     const [allTracks, channelUploads]=await Promise.all([
       fetchPlaylist('All'),
-      fetch('/api/youtube/videos').then(check)
+      fetch('/api/youtube/latest').then(check)
     ]);
     state.videos=allTracks;
-    state.latestVideo=unique(channelUploads)[0]||state.videos[0]||null;
+    state.latestVideo=channelUploads||state.videos[0]||null;
     state.selectedId=state.latestVideo?.id||state.videos[0]?.id||null;
     renderHero();
     renderGenres();
@@ -132,7 +132,7 @@ function renderHero(){
   els.hero.innerHTML='';
   els.heroInfo.classList.remove('hidden');
   els.heroInfo.innerHTML=`<div class="hero-release-line"><span class="hero-release-label">NEW RELEASE</span><span class="hero-release-separator">·</span><h1>${esc(displayTitle(v.title))}</h1></div><div class="hero-actions"><span class="out-now">OUT NOW</span><button id="listenNowButton" class="listen-now">▶ Play</button></div>`;
-  $('#listenNowButton').onclick=e=>{e.stopPropagation();selectTrack(v.id,true);};
+  $('#listenNowButton').onclick=e=>{e.stopPropagation();selectTrack(v.id,false);};
 }
 
 function renderGenres(){

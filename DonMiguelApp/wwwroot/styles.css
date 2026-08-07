@@ -194,7 +194,7 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
   .mini-player .control-button.primary{width:42px;height:42px}
 }
 
-/* v3.14 — one clear primary Play/Pause button in the mini player */
+/* v3.15 — compact mini player, one primary Play/Pause button */
 .mini-player{
   grid-template-columns:44px 48px minmax(0,1fr) 48px 44px;
 }
