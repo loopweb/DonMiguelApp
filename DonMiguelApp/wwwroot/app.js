@@ -63,6 +63,15 @@ const linkGroups={
 const genres=Object.keys(PLAYLISTS);
 const preloaderStartedAt=Date.now();
 let preloaderClosed=false;
+
+function wakeServer(){
+  fetch('/health', {
+    method:'GET',
+    cache:'no-store',
+    credentials:'same-origin'
+  }).catch(()=>{});
+}
+
 function setPreloaderText(text){if(els.preloaderText)els.preloaderText.textContent=text;}
 function closePreloader(){
   if(preloaderClosed)return;
@@ -282,3 +291,10 @@ $('#socialLinks').innerHTML=linkGroups.social.map(([name,url,icon])=>`<a class="
 
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
 load();
+
+
+wakeServer();
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible') wakeServer();
+});

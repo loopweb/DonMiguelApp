@@ -68,5 +68,7 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
     catch (Exception ex) { return Results.Problem(ex.Message, statusCode: 503); }
 });
 
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
 app.MapFallbackToFile("index.html");
 app.Run();
