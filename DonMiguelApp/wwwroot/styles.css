@@ -143,3 +143,53 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
   .hero-release-label{font-size:.66rem}
   .hero-info .hero-release-line h1{font-size:1rem}
 }
+
+/* v3.13 — compact mini player with explicit expand control */
+.mini-player{
+  grid-template-columns:44px 48px minmax(0,1fr) 48px 44px 44px;
+  gap:6px;
+  padding:7px 9px calc(7px + var(--safe));
+}
+.mini-expand{
+  width:44px;
+  height:44px;
+  border:0;
+  background:transparent;
+  color:var(--gold);
+  font-size:1.65rem;
+  line-height:1;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+}
+.mini-expand:active{background:#1b1b1b}
+.mini-thumb{
+  width:48px;
+  height:42px;
+  object-fit:cover;
+  border-radius:5px;
+  display:block;
+}
+.mini-label{
+  min-width:0;
+  color:#fff;
+  font-size:.75rem;
+  font-weight:800;
+  letter-spacing:.08em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+@media(max-width:420px){
+  .mini-player{
+    grid-template-columns:40px 44px minmax(0,1fr) 44px 40px 40px;
+    gap:4px;
+    padding-left:6px;
+    padding-right:6px;
+  }
+  .mini-expand{width:40px;height:40px}
+  .mini-thumb{width:44px;height:40px}
+  .mini-label{font-size:.67rem;letter-spacing:.055em}
+  .mini-player .control-button{padding:7px}
+  .mini-player .control-button.primary{width:42px;height:42px}
+}

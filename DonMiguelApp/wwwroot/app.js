@@ -30,7 +30,7 @@ const els={
   preloader:$('#appPreloader'),preloaderText:$('#preloaderText'),shell:$('.app-shell'),
   hero:$('#hero'),heroInfo:$('#heroInfo'),status:$('#statusBox'),list:$('#trackList'),count:$('#trackCount'),
   genres:$('#genreBar'),search:$('#searchInput'),mini:$('#miniPlayer'),miniThumb:$('#miniThumb'),
-  miniTitle:$('#miniTitle'),miniPlay:$('#playPauseButton'),dialogPlay:$('#dialogPlayPauseButton'),
+  miniPlay:$('#playPauseButton'),dialogPlay:$('#dialogPlayPauseButton'),
   nowDialog:$('#nowPlayingDialog'),nowTitle:$('#nowTitle'),nowMeta:$('#nowMeta'),comments:$('#comments'),
   commentCount:$('#commentCount'),menu:$('#menuDialog')
 };
@@ -170,7 +170,7 @@ function applyFilters(){
 function renderList(){
   els.count.textContent=`${state.filtered.length} Tracks`;
   els.list.innerHTML=state.filtered.map(v=>`<button class="track-row ${v.id===state.selectedId?'active':''}" data-id="${esc(v.id)}"><img src="${esc(v.thumbnail)}" alt=""><span class="track-copy"><strong>${esc(displayTitle(v.title))}</strong></span><span class="track-duration">${esc(v.duration||'')}</span><span class="track-play">▶</span></button>`).join('')||'<div class="status-box">No matching tracks found.</div>';
-  els.list.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>selectTrack(b.dataset.id,true));
+  els.list.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>selectTrack(b.dataset.id,false));
 }
 
 function findVideo(id){
@@ -190,7 +190,6 @@ function selectTrack(id,open,shouldPlay=true){
   state.selectedId=id;
   els.mini.classList.remove('hidden');
   els.miniThumb.src=v.thumbnail;
-  els.miniTitle.textContent=v.title;
   els.nowTitle.textContent=v.title;
   els.nowMeta.textContent=`◉ ${views(v.viewCount)} Views · ${relativeDate(v.publishedAt)}`;
   renderList();
@@ -242,7 +241,7 @@ $('#closeMenu').onclick=()=>els.menu.close();
 $('#openNowPlaying').onclick=()=>{els.nowDialog.showModal();if(state.selectedId)loadComments(state.selectedId);};
 $('#closeNowPlaying').onclick=()=>els.nowDialog.close();
 $('#queueButton').onclick=()=>{els.nowDialog.close();document.querySelector('.library').scrollIntoView({behavior:'smooth'});};
-$('#previousButton').onclick=$('#dialogPreviousButton').onclick=()=>step(-1);
+$('#dialogPreviousButton').onclick=()=>step(-1);
 $('#nextButton').onclick=$('#dialogNextButton').onclick=()=>step(1);
 els.miniPlay.onclick=els.dialogPlay.onclick=togglePlay;
 $('#shuffleButton').onclick=e=>{state.shuffle=!state.shuffle;e.currentTarget.classList.toggle('active',state.shuffle);};
