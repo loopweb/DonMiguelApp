@@ -53,7 +53,8 @@ const linkGroups={
     ['Instagram','https://www.instagram.com/don_miguel_de_cabarete/','instagram.svg'],
     ['TikTok','https://www.tiktok.com/@loopweb', 'tiktok.svg'],
     ['Facebook','https://www.facebook.com/donmiguel.music/','facebook.svg'],
-    ['X / Twitter','https://x.com/loopweb', 'x.svg']
+    ['X / Twitter','https://x.com/loopweb', 'x.svg'],
+    ['Onplug','https://onplug.net/pages/migflow', 'onplug.svg']
   ]
 };
 
@@ -160,7 +161,7 @@ function applyFilters(){
 
 function renderList(){
   els.count.textContent=`${state.filtered.length} Tracks`;
-  els.list.innerHTML=state.filtered.map(v=>`<button class="track-row ${v.id===state.selectedId?'active':''}" data-id="${esc(v.id)}"><img src="${esc(v.thumbnail)}" alt=""><span class="track-copy"><strong>${esc(v.title)}</strong><small>${esc(state.genre)} · ◉ ${views(v.viewCount)} Views · ${relativeDate(v.publishedAt)}</small></span><span class="track-duration">${esc(v.duration||'')}</span><span class="track-play">▶</span></button>`).join('')||'<div class="status-box">No matching tracks found.</div>';
+  els.list.innerHTML=state.filtered.map(v=>`<button class="track-row ${v.id===state.selectedId?'active':''}" data-id="${esc(v.id)}"><img src="${esc(v.thumbnail)}" alt=""><span class="track-copy"><strong>${esc(v.title)}</strong></span><span class="track-duration">${esc(v.duration||'')}</span><span class="track-play">▶</span></button>`).join('')||'<div class="status-box">No matching tracks found.</div>';
   els.list.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>selectTrack(b.dataset.id,true));
 }
 
