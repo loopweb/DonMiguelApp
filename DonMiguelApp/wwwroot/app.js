@@ -239,8 +239,8 @@ $('#menuButton').onclick=()=>els.menu.showModal();
 $('#playerMenuButton').onclick=()=>els.menu.showModal();
 $('#closeMenu').onclick=()=>els.menu.close();
 $('#openNowPlaying').onclick=()=>{els.nowDialog.showModal();if(state.selectedId)loadComments(state.selectedId);};
+$('#queueButton').onclick=()=>document.querySelector('.library').scrollIntoView({behavior:'smooth'});
 $('#closeNowPlaying').onclick=()=>els.nowDialog.close();
-$('#queueButton').onclick=()=>document.querySelector('.library').scrollIntoView({behavior:'smooth'});document.querySelector('.library').scrollIntoView({behavior:'smooth'});};
 $('#dialogPreviousButton').onclick=()=>step(-1);
 $('#dialogNextButton').onclick=()=>step(1);
 els.miniPlay.onclick=els.dialogPlay.onclick=togglePlay;
@@ -248,7 +248,7 @@ $('#shuffleButton').onclick=e=>{state.shuffle=!state.shuffle;e.currentTarget.cla
 $('#repeatButton').onclick=e=>{state.repeat=!state.repeat;e.currentTarget.classList.toggle('active',state.repeat);};
 $('#musicLinks').innerHTML=linkGroups.music.map(([name,url,icon])=>`<a class="service-tile" href="${url}" target="_blank" rel="noopener"><img class="service-logo" src="/assets/icons/${icon}" alt=""><strong>${esc(name)}</strong><small>Open</small></a>`).join('');
 $('#officialLinks').innerHTML=linkGroups.official.map(([name,url,sub,icon])=>`<a class="official-row" href="${url}" target="_blank" rel="noopener"><img class="official-logo" src="/assets/icons/${icon}" alt=""><span><strong>${esc(name)}</strong><small>${esc(sub)}</small></span><b>›</b></a>`).join('');
-$('#socialLinks').innerHTML=linkGroups.social.map(([name,url,icon])=>`<a class="social-tile" href="${url}" target="_blank" rel="noopener"><img class="social-logo" src="/assets/icons/${icon}" alt="${esc(name)}"><strong>${esc(name)}</strong></a>`).join('');
+$('#socialLinks').innerHTML=linkGroups.social.map(([name,url,icon])=>url?`<a class="social-tile" href="${url}" target="_blank" rel="noopener"><img class="social-logo" src="/assets/icons/${icon}" alt=""><strong>${esc(name)}</strong></a>`:`<div class="social-tile pending-link" title="Profile URL not configured"><img class="social-logo" src="/assets/icons/${icon}" alt=""><strong>${esc(name)}</strong></div>`).join('');
 
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
 load();
