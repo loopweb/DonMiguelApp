@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <meta name="description" content="Official app of Don Miguel de Cabarete">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Don Miguel de Cabarete</title>
+</head>
+<body class="is-loading">
+  <div id="appPreloader" class="app-preloader" role="status" aria-live="polite" aria-label="Loading">
+    <p id="preloaderText">Loading</p>
+    <div class="preloader-dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <div class="app-shell" aria-hidden="true">
+    <header class="topbar">
+      <div class="brand"><span class="crown">♛</span><strong>DON MIGUEL</strong><small>DE CABARETE</small></div>
+      <button id="menuButton" class="icon-button" aria-label="Open menu">☰</button>
+    </header>
+
+    <main>
+      <section id="hero" class="hero skeleton"></section>
+      <section id="heroInfo" class="hero-info hidden"></section>
+
+      <section class="library">
+        <div class="search-wrap">
+          <input id="searchInput" type="search" placeholder="Search title or keyword …" autocomplete="off">
+          <span>⌕</span>
+        </div>
+        <div id="genreBar" class="genre-bar" aria-label="Genre filter"></div>
+        <div class="section-title">
+          <h2>♫ Latest Releases</h2>
+          <span id="trackCount"></span>
+        </div>
+        <div id="statusBox" class="status-box">Loading …</div>
+        <div id="trackList" class="track-list"></div>
+      </section>
+    </main>
+
+    <section id="miniPlayer" class="mini-player hidden" aria-label="Mini player">
+      <button id="openNowPlaying" class="mini-info" aria-label="Open player">
+        <img id="miniThumb" alt="">
+        <span><strong id="miniTitle"></strong><small>Don Miguel de Cabarete</small></span>
+      </button>
+      <button id="previousButton" class="control-button" aria-label="Previous track">|◀</button>
+      <button id="playPauseButton" class="control-button primary" aria-label="Play or pause">▶</button>
+      <button id="nextButton" class="control-button" aria-label="Next track">▶|</button>
+      <button id="queueButton" class="control-button" aria-label="Track list">☷</button>
+    </section>
+  </div>
+
+  <dialog id="nowPlayingDialog" class="now-playing-dialog">
+    <div class="dialog-header">
+      <button id="closeNowPlaying" class="icon-button" aria-label="Close player">⌄</button>
+      <strong>Now Playing</strong>
+      <button id="playerMenuButton" class="icon-button" aria-label="Open menu">⋮</button>
+    </div>
+    <div class="video-stage"><div id="youtubePlayer"></div></div>
+    <section class="now-playing-content">
+      <h1 id="nowTitle"></h1>
+      <p class="artist">Don Miguel de Cabarete</p>
+      <p id="nowMeta" class="muted"></p>
+      <div class="full-controls">
+        <button id="shuffleButton" aria-label="Shuffle">⇄</button>
+        <button id="dialogPreviousButton" aria-label="Previous track">|◀</button>
+        <button id="dialogPlayPauseButton" class="main-play" aria-label="Play or pause">▶</button>
+        <button id="dialogNextButton" aria-label="Next track">▶|</button>
+        <button id="repeatButton" aria-label="Repeat">↻</button>
+      </div>
+      <div class="comments-head"><h2>Comments</h2><span id="commentCount"></span></div>
+      <div id="comments" class="comments"><p class="muted">Loading comments …</p></div>
+    </section>
+  </dialog>
+
+  <dialog id="menuDialog" class="menu-dialog">
+    <div class="dialog-header"><strong>Links</strong><button id="closeMenu" class="icon-button" aria-label="Close menu">×</button></div>
+    <div class="links-content">
+      <section class="link-section">
+        <h3>♫ LISTEN & BUY MUSIC</h3>
+        <div id="musicLinks" class="service-grid"></div>
+      </section>
+      <section class="link-section">
+        <h3>◎ OFFICIAL LINKS</h3>
+        <div id="officialLinks" class="official-links"></div>
+      </section>
+      <section class="link-section">
+        <h3>⌯ SOCIAL MEDIA</h3>
+        <div id="socialLinks" class="social-grid"></div>
+      </section>
+      <section class="link-section info-section">
+        <h3>ⓘ INFO</h3>
+        <div class="info-links">
+          <a href="https://donmiguel.nicepage.io/" target="_blank" rel="noopener"><span>Legal Notice</span><b>›</b></a>
+          <a href="https://donmiguel.nicepage.io/" target="_blank" rel="noopener"><span>Privacy Policy</span><b>›</b></a>
+          <div><span>App Version</span><small>3.7.0</small></div>
+        </div>
+      </section>
+    </div>
+  </dialog>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="/app.js" defer></script>
+</body>
+</html>
