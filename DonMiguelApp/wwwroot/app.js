@@ -223,7 +223,7 @@ async function loadComments(id){
 window.onYouTubeIframeAPIReady=()=>{
   state.player=new YT.Player('youtubePlayer',{
     height:'100%',width:'100%',videoId:state.selectedId||'',
-    playerVars:{playsinline:1,rel:0,modestbranding:1,autoplay:0},
+    playerVars:{playsinline:1,rel:0,autoplay:0,controls:0,disablekb:1,fs:0,iv_load_policy:3,cc_load_policy:0},
     events:{
       onReady:()=>{state.playerReady=true;},
       onStateChange:e=>{
