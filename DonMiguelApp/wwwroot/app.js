@@ -131,7 +131,7 @@ function renderHero(){
   els.hero.style.backgroundImage=`url("${v.thumbnail}")`;
   els.hero.innerHTML='';
   els.heroInfo.classList.remove('hidden');
-  els.heroInfo.innerHTML=`<div class="hero-release-line"><span class="hero-release-label">NEW RELEASE</span><span class="hero-release-separator">·</span><h1>${esc(displayTitle(v.title))}</h1></div><div class="hero-actions"><span class="out-now">OUT NOW</span><button id="listenNowButton" class="listen-now">▶ Play</button></div>`;
+  els.heroInfo.innerHTML=`<div class="hero-release-line"><span class="hero-release-label">NEW RELEASE</span><span class="hero-release-separator">·</span><h1>${esc(displayTitle(v.title))}</h1></div><div class="hero-main-action"><button id="listenNowButton" class="hero-round-play" aria-label="Play latest release"><span>▶</span></button></div>`;
   $('#listenNowButton').onclick=e=>{e.stopPropagation();selectTrack(v.id,false);};
 }
 
