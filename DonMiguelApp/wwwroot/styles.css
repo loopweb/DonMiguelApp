@@ -662,3 +662,37 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
   min-height:2px!important;
   overflow:hidden!important;
 }
+
+/* v1.0 — YouTube interaction shortcuts in the full player */
+.youtube-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:4px 0 18px;
+}
+.youtube-action-button{
+  min-height:44px;
+  border:1px solid #5a4821;
+  border-radius:10px;
+  background:#111;
+  color:#fff;
+  font:inherit;
+  font-size:.86rem;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:9px 12px;
+}
+.youtube-action-button:active{
+  border-color:var(--gold);
+  transform:scale(.985);
+}
+@media(max-width:420px){
+  .youtube-actions{gap:7px}
+  .youtube-action-button{
+    font-size:.78rem;
+    padding:8px 7px;
+  }
+}

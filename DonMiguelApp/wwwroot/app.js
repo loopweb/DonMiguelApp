@@ -285,6 +285,16 @@ $('#nextButton').onclick=$('#dialogNextButton').onclick=()=>step(1);
 els.miniPlay.onclick=els.dialogPlay.onclick=togglePlay;
 $('#shuffleButton').onclick=e=>{state.shuffle=!state.shuffle;e.currentTarget.classList.toggle('active',state.shuffle);};
 $('#repeatButton').onclick=e=>{state.repeat=!state.repeat;e.currentTarget.classList.toggle('active',state.repeat);};
+
+function openCurrentVideoOnYouTube(showComments=false){
+  if(!state.selectedId)return;
+  const suffix=showComments?'#comments':'';
+  const url=`https://www.youtube.com/watch?v=${encodeURIComponent(state.selectedId)}${suffix}`;
+  window.open(url,'_blank','noopener');
+}
+$('#youtubeLikeButton').onclick=()=>openCurrentVideoOnYouTube(false);
+$('#youtubeCommentButton').onclick=()=>openCurrentVideoOnYouTube(true);
+
 $('#musicLinks').innerHTML=linkGroups.music.map(([name,url,icon])=>`<a class="service-tile" href="${url}" target="_blank" rel="noopener"><span class="brand-icon-shell"><img class="service-logo" src="/assets/icons/${icon}" alt="${esc(name)}"></span><strong>${esc(name)}</strong></a>`).join('');
 $('#officialLinks').innerHTML=linkGroups.official.map(([name,url,sub,icon])=>`<a class="official-row" href="${url}" target="_blank" rel="noopener"><img class="official-logo" src="/assets/icons/${icon}" alt=""><span><strong>${esc(name)}</strong><small>${esc(sub)}</small></span><b>›</b></a>`).join('');
 $('#socialLinks').innerHTML=linkGroups.social.map(([name,url,icon])=>`<a class="social-tile compact-social-tile" href="${url}" target="_blank" rel="noopener"><img class="compact-social-logo" src="/assets/icons/${icon}" alt="${esc(name)}"><span>${esc(name)}</span></a>`).join('');
