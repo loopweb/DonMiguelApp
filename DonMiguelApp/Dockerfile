@@ -9,7 +9,8 @@ RUN dotnet publish "DonMiguelApp.csproj" -c Release -o /app/publish /p:UseAppHos
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
+ENV DOTNET_hostBuilder__reloadConfigOnChange=false
 COPY --from=build /app/publish .
 ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 10000
-ENTRYPOINT ["dotnet", "DonMiguelApp.dll"]
+ENTRYPOINT ["dotnet", "DonMiguelApp.dll", "--hostBuilder:reloadConfigOnChange=false"]
