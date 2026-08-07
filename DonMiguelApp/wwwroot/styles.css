@@ -105,3 +105,41 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
   .hero-info{padding:12px 14px 15px}
   .hero-info h1{font-size:1.05rem}
 }
+
+/* v3.11 compact release line below the unobstructed hero image */
+.hero-badge{display:none!important}
+.hero-release-line{
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+  min-width:0;
+}
+.hero-release-label{
+  flex:0 0 auto;
+  color:var(--gold);
+  font-size:.72rem;
+  font-weight:850;
+  letter-spacing:.055em;
+  white-space:nowrap;
+}
+.hero-release-separator{
+  flex:0 0 auto;
+  color:#76663b;
+  font-weight:800;
+}
+.hero-info .hero-release-line h1{
+  min-width:0;
+  margin:0;
+  font-size:1.12rem;
+  line-height:1.22;
+  font-weight:760;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:block;
+}
+@media(max-width:480px){
+  .hero-release-line{gap:6px}
+  .hero-release-label{font-size:.66rem}
+  .hero-info .hero-release-line h1{font-size:1rem}
+}
