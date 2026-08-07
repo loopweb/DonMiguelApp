@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: don-miguel-app
+    runtime: docker
+    plan: free
+    dockerfilePath: ./DonMiguelApp/Dockerfile
+    dockerContext: ./DonMiguelApp
+    healthCheckPath: /api/status
+    envVars:
+      - key: YouTube__ApiKey
+        sync: false
+      - key: YouTube__Handle
+        value: "@migflow"

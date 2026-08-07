@@ -1,0 +1,10 @@
+{
+  "name": "Don Miguel de Cabarete",
+  "short_name": "Don Miguel",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "lang": "en",
+  "description": "Official app of Don Miguel de Cabarete"
+}
