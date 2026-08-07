@@ -606,3 +606,28 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
     height:54px!important;
   }
 }
+
+/* v3.27 — force social brand icons to render */
+#socialLinks{
+  display:grid!important;
+}
+#socialLinks .compact-social-tile{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+#socialLinks .compact-social-logo{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  object-fit:contain!important;
+  filter:none!important;
+}
+#socialLinks .compact-social-tile span{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
