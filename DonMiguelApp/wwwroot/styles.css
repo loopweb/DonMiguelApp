@@ -203,3 +203,45 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
     grid-template-columns:40px 44px minmax(0,1fr) 44px 40px;
   }
 }
+
+/* v3.16 — final mini-player controls */
+.mini-player{
+  grid-template-columns:44px 48px minmax(0,1fr) 60px;
+  gap:8px;
+  align-items:center;
+}
+.mini-main-play{
+  width:56px!important;
+  height:56px!important;
+  min-width:56px;
+  border-radius:50%;
+  font-size:1.35rem!important;
+  justify-self:end;
+}
+.mini-label{
+  font-size:.74rem;
+  font-weight:850;
+  letter-spacing:.075em;
+}
+@media(max-width:420px){
+  .mini-player{
+    grid-template-columns:40px 44px minmax(0,1fr) 54px;
+    gap:6px;
+  }
+  .mini-main-play{
+    width:50px!important;
+    height:50px!important;
+    min-width:50px;
+  }
+}
+
+/* Social-network logos belong only to the Links dialog. */
+.now-playing-dialog .social-grid,
+.now-playing-dialog .social-tile,
+.mini-player .social-grid,
+.mini-player .social-tile{
+  display:none!important;
+}
+.menu-dialog .social-grid{
+  display:grid;
+}
