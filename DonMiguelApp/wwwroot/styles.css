@@ -631,3 +631,34 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
   visibility:visible!important;
   opacity:1!important;
 }
+
+/* v3.29 — iOS playback reliability: keep YouTube iframe alive while minimized */
+.now-playing-dialog.player-minimized{
+  position:fixed!important;
+  left:-20px!important;
+  top:-20px!important;
+  width:2px!important;
+  height:2px!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:2px!important;
+  max-height:2px!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  opacity:.001!important;
+  overflow:hidden!important;
+  pointer-events:none!important;
+  z-index:-1!important;
+}
+.now-playing-dialog.player-minimized .dialog-header,
+.now-playing-dialog.player-minimized .now-playing-content{
+  display:none!important;
+}
+.now-playing-dialog.player-minimized .video-stage{
+  display:block!important;
+  width:2px!important;
+  height:2px!important;
+  min-height:2px!important;
+  overflow:hidden!important;
+}

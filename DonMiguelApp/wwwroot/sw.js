@@ -1,4 +1,4 @@
-const CACHE='donmiguel-v3.28.0';
+const CACHE='donmiguel-v3.29.0';
 const ASSETS=['/','/index.html','/styles.css','/app.js','/manifest.webmanifest','/assets/icons/spotify.svg','/assets/icons/applemusic.svg','/assets/icons/amazonmusic.svg','/assets/icons/youtubemusic.svg','/assets/icons/youtube.svg','/assets/icons/laut.svg','/assets/icons/homepage.svg','/assets/icons/unitedmasters.svg','/assets/icons/whatsapp.svg','/assets/icons/instagram.svg','/assets/icons/tiktok.svg','/assets/icons/facebook.svg','/assets/icons/x.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));

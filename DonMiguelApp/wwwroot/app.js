@@ -22,7 +22,9 @@ const state={
   repeat:false,
   comments:[],
   latestVideo:null,
-  loadingGenre:false
+  loadingGenre:false,
+  pendingPlay:false,
+  pendingVideoId:null
 };
 
 const $=s=>document.querySelector(s);
@@ -188,16 +190,17 @@ function selectTrack(id,open,shouldPlay=true){
   const v=findVideo(id);
   if(!v)return;
   state.selectedId=id;
+  state.pendingVideoId=id;
+  state.pendingPlay=!!shouldPlay;
   els.mini.classList.remove('hidden');
   els.nowTitle.textContent=v.title;
   els.nowMeta.textContent=`◉ ${views(v.viewCount)} Views · ${relativeDate(v.publishedAt)}`;
   renderList();
   if(state.playerReady){
-    if(shouldPlay){state.player.loadVideoById(id);state.playing=true;}
-    else{state.player.cueVideoById(id);state.playing=false;}
-    syncPlayIcons();
+    if(shouldPlay)state.player.loadVideoById(id);
+    else state.player.cueVideoById(id);
   }
-  if(open){els.nowDialog.showModal();loadComments(id);}
+  if(open)openFullPlayer();
 }
 
 function indexInActive(){
@@ -205,7 +208,7 @@ function indexInActive(){
   return{list,index:Math.max(0,list.findIndex(v=>v.id===state.selectedId))};
 }
 function step(direction){const{list,index}=indexInActive();if(!list.length)return;const next=state.shuffle?Math.floor(Math.random()*list.length):(index+direction+list.length)%list.length;selectTrack(list[next].id,false);}
-function togglePlay(){if(!state.playerReady)return;if(state.playing)state.player.pauseVideo();else state.player.playVideo();}
+function togglePlay(){if(!state.playerReady){state.pendingPlay=true;state.pendingVideoId=state.selectedId;return;}if(state.playing){state.pendingPlay=false;state.player.pauseVideo();}else{state.pendingPlay=true;state.pendingVideoId=state.selectedId;state.player.playVideo();}}
 function syncPlayIcons(){const icon=state.playing?'Ⅱ':'▶';els.miniPlay.textContent=icon;els.dialogPlay.textContent=icon;}
 
 async function loadComments(id){
@@ -219,16 +222,29 @@ async function loadComments(id){
 }
 
 window.onYouTubeIframeAPIReady=()=>{
+  // Keep the iframe alive even while the large player is minimized. iOS can
+  // suspend media inside a closed <dialog>, which made playback intermittent.
+  if(!els.nowDialog.open)els.nowDialog.show();
+  els.nowDialog.classList.add('player-minimized');
   state.player=new YT.Player('youtubePlayer',{
     height:'100%',width:'100%',videoId:state.selectedId||'',
     playerVars:{playsinline:1,rel:0,autoplay:0,controls:0,disablekb:1,fs:0,iv_load_policy:3,cc_load_policy:0},
     events:{
-      onReady:()=>{state.playerReady=true;},
+      onReady:()=>{
+        state.playerReady=true;
+        const id=state.pendingVideoId||state.selectedId;
+        if(id){
+          if(state.pendingPlay)state.player.loadVideoById(id);
+          else state.player.cueVideoById(id);
+        }
+      },
       onStateChange:e=>{
         state.playing=e.data===YT.PlayerState.PLAYING;
+        if(state.playing){state.pendingPlay=false;state.pendingVideoId=null;}
         syncPlayIcons();
         if(e.data===YT.PlayerState.ENDED){if(state.repeat)state.player.playVideo();else step(1);}
-      }
+      },
+      onError:()=>{state.playing=false;state.pendingPlay=false;syncPlayIcons();}
     }
   });
 };
@@ -237,9 +253,18 @@ els.search.oninput=e=>{state.query=e.target.value;applyFilters();};
 $('#menuButton').onclick=()=>els.menu.showModal();
 $('#playerMenuButton').onclick=()=>els.menu.showModal();
 $('#closeMenu').onclick=()=>els.menu.close();
-$('#openNowPlaying').onclick=()=>{els.nowDialog.showModal();if(state.selectedId)loadComments(state.selectedId);};
+function openFullPlayer(){
+  if(!els.nowDialog.open)els.nowDialog.show();
+  els.nowDialog.classList.remove('player-minimized');
+  if(state.selectedId)loadComments(state.selectedId);
+}
+function minimizeFullPlayer(){
+  if(!els.nowDialog.open)els.nowDialog.show();
+  els.nowDialog.classList.add('player-minimized');
+}
+$('#openNowPlaying').onclick=openFullPlayer;
 $('#queueButton').onclick=()=>{els.list.scrollIntoView({behavior:'smooth',block:'start'});};
-$('#closeNowPlaying').onclick=()=>els.nowDialog.close();
+$('#closeNowPlaying').onclick=minimizeFullPlayer;
 $('#previousButton').onclick=$('#dialogPreviousButton').onclick=()=>step(-1);
 $('#nextButton').onclick=$('#dialogNextButton').onclick=()=>step(1);
 els.miniPlay.onclick=els.dialogPlay.onclick=togglePlay;
