@@ -131,7 +131,7 @@ function renderHero(){
   els.hero.style.backgroundImage=`url("${v.thumbnail}")`;
   els.hero.innerHTML='';
   els.heroInfo.classList.remove('hidden');
-  els.heroInfo.innerHTML=`<div class="hero-release-line"><span class="hero-release-label">NEW RELEASE</span><span class="hero-release-separator">·</span><h1>${esc(displayTitle(v.title))}</h1></div><div class="hero-actions hero-actions-single"><button id="listenNowButton" class="hero-play-new-release" aria-label="Play new release"><span class="hero-play-icon">▶</span><span>Play new Release</span></button></div>`;
+  els.heroInfo.innerHTML=`<div class="hero-actions hero-actions-single"><button id="listenNowButton" class="hero-play-new-release" aria-label="Play new release"><span class="hero-play-icon">▶</span><span>Play new Release</span></button></div>`;
   $('#listenNowButton').onclick=e=>{e.stopPropagation();selectTrack(v.id,false);};
 }
 
@@ -239,16 +239,15 @@ $('#menuButton').onclick=()=>els.menu.showModal();
 $('#playerMenuButton').onclick=()=>els.menu.showModal();
 $('#closeMenu').onclick=()=>els.menu.close();
 $('#openNowPlaying').onclick=()=>{els.nowDialog.showModal();if(state.selectedId)loadComments(state.selectedId);};
-$('#queueButton').onclick=()=>document.querySelector('.library').scrollIntoView({behavior:'smooth'});
 $('#closeNowPlaying').onclick=()=>els.nowDialog.close();
-$('#dialogPreviousButton').onclick=()=>step(-1);
-$('#dialogNextButton').onclick=()=>step(1);
+$('#previousButton').onclick=$('#dialogPreviousButton').onclick=()=>step(-1);
+$('#nextButton').onclick=$('#dialogNextButton').onclick=()=>step(1);
 els.miniPlay.onclick=els.dialogPlay.onclick=togglePlay;
 $('#shuffleButton').onclick=e=>{state.shuffle=!state.shuffle;e.currentTarget.classList.toggle('active',state.shuffle);};
 $('#repeatButton').onclick=e=>{state.repeat=!state.repeat;e.currentTarget.classList.toggle('active',state.repeat);};
-$('#musicLinks').innerHTML=linkGroups.music.map(([name,url,icon])=>`<a class="service-tile" href="${url}" target="_blank" rel="noopener"><img class="service-logo" src="/assets/icons/${icon}" alt=""><strong>${esc(name)}</strong><small>Open</small></a>`).join('');
+$('#musicLinks').innerHTML=linkGroups.music.map(([name,url,icon])=>`<a class="service-tile" href="${url}" target="_blank" rel="noopener"><span class="brand-icon-shell"><img class="service-logo" src="/assets/icons/${icon}" alt="${esc(name)}"></span><strong>${esc(name)}</strong></a>`).join('');
 $('#officialLinks').innerHTML=linkGroups.official.map(([name,url,sub,icon])=>`<a class="official-row" href="${url}" target="_blank" rel="noopener"><img class="official-logo" src="/assets/icons/${icon}" alt=""><span><strong>${esc(name)}</strong><small>${esc(sub)}</small></span><b>›</b></a>`).join('');
-$('#socialLinks').innerHTML=linkGroups.social.map(([name,url,icon])=>url?`<a class="social-tile" href="${url}" target="_blank" rel="noopener"><img class="social-logo" src="/assets/icons/${icon}" alt=""><strong>${esc(name)}</strong></a>`:`<div class="social-tile pending-link" title="Profile URL not configured"><img class="social-logo" src="/assets/icons/${icon}" alt=""><strong>${esc(name)}</strong></div>`).join('');
+$('#socialLinks').innerHTML=linkGroups.social.map(([name,url,icon])=>`<a class="social-tile" href="${url}" target="_blank" rel="noopener"><span class="brand-icon-shell"><img class="social-logo" src="/assets/icons/${icon}" alt="${esc(name)}"></span><strong>${esc(name)}</strong></a>`).join('');
 
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
 load();
