@@ -242,7 +242,7 @@ $('#openNowPlaying').onclick=()=>{els.nowDialog.showModal();if(state.selectedId)
 $('#closeNowPlaying').onclick=()=>els.nowDialog.close();
 $('#queueButton').onclick=()=>{els.nowDialog.close();document.querySelector('.library').scrollIntoView({behavior:'smooth'});};
 $('#dialogPreviousButton').onclick=()=>step(-1);
-$('#nextButton').onclick=$('#dialogNextButton').onclick=()=>step(1);
+$('#dialogNextButton').onclick=()=>step(1);
 els.miniPlay.onclick=els.dialogPlay.onclick=togglePlay;
 $('#shuffleButton').onclick=e=>{state.shuffle=!state.shuffle;e.currentTarget.classList.toggle('active',state.shuffle);};
 $('#repeatButton').onclick=e=>{state.repeat=!state.repeat;e.currentTarget.classList.toggle('active',state.repeat);};
