@@ -240,6 +240,7 @@ $('#playerMenuButton').onclick=()=>els.menu.showModal();
 $('#closeMenu').onclick=()=>els.menu.close();
 $('#openNowPlaying').onclick=()=>{els.nowDialog.showModal();if(state.selectedId)loadComments(state.selectedId);};
 $('#closeNowPlaying').onclick=()=>els.nowDialog.close();
+$('#queueButton').onclick=()=>document.querySelector('.library').scrollIntoView({behavior:'smooth'});document.querySelector('.library').scrollIntoView({behavior:'smooth'});};
 $('#dialogPreviousButton').onclick=()=>step(-1);
 $('#dialogNextButton').onclick=()=>step(1);
 els.miniPlay.onclick=els.dialogPlay.onclick=togglePlay;
