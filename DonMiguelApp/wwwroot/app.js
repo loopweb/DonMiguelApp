@@ -254,12 +254,18 @@ $('#menuButton').onclick=()=>els.menu.showModal();
 $('#playerMenuButton').onclick=()=>els.menu.showModal();
 $('#closeMenu').onclick=()=>els.menu.close();
 function openFullPlayer(){
-  if(!els.nowDialog.open)els.nowDialog.show();
+  // The YouTube iframe stays alive while minimized, but the visible player
+  // must be reopened as a real modal so iOS/Safari renders it correctly.
+  if(els.nowDialog.open)els.nowDialog.close();
   els.nowDialog.classList.remove('player-minimized');
+  els.nowDialog.showModal();
   if(state.selectedId)loadComments(state.selectedId);
 }
 function minimizeFullPlayer(){
-  if(!els.nowDialog.open)els.nowDialog.show();
+  // Switch from modal to a tiny non-modal dialog instead of destroying
+  // the iframe. This preserves reliable playback on iOS.
+  if(els.nowDialog.open)els.nowDialog.close();
+  els.nowDialog.show();
   els.nowDialog.classList.add('player-minimized');
 }
 $('#openNowPlaying').onclick=openFullPlayer;
