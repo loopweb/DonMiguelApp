@@ -28,7 +28,7 @@ const state={
 const $=s=>document.querySelector(s);
 const els={
   preloader:$('#appPreloader'),preloaderText:$('#preloaderText'),shell:$('.app-shell'),
-  hero:$('#hero'),status:$('#statusBox'),list:$('#trackList'),count:$('#trackCount'),
+  hero:$('#hero'),heroInfo:$('#heroInfo'),status:$('#statusBox'),list:$('#trackList'),count:$('#trackCount'),
   genres:$('#genreBar'),search:$('#searchInput'),mini:$('#miniPlayer'),miniThumb:$('#miniThumb'),
   miniTitle:$('#miniTitle'),miniPlay:$('#playPauseButton'),dialogPlay:$('#dialogPlayPauseButton'),
   nowDialog:$('#nowPlayingDialog'),nowTitle:$('#nowTitle'),nowMeta:$('#nowMeta'),comments:$('#comments'),
@@ -118,12 +118,20 @@ async function load(){
   }
 }
 
+function displayTitle(title){
+  return String(title||'')
+    .replace(/\s*[–—-]\s*Don Miguel de Cabarete(?:\s*[|–—-]\s*.*)?$/i,'')
+    .trim();
+}
+
 function renderHero(){
   const v=state.latestVideo;
   if(!v)return;
   els.hero.classList.remove('skeleton');
   els.hero.style.backgroundImage=`url("${v.thumbnail}")`;
-  els.hero.innerHTML=`<div class="hero-copy"><span class="hero-kicker">NEW RELEASE</span><h1>${esc(v.title)}</h1><p>The latest track from Don Miguel de Cabarete.</p><div class="hero-actions"><span class="out-now">OUT NOW</span><button id="listenNowButton" class="listen-now">▶ Play</button></div></div>`;
+  els.hero.innerHTML=`<span class="hero-kicker hero-badge">NEW RELEASE</span>`;
+  els.heroInfo.classList.remove('hidden');
+  els.heroInfo.innerHTML=`<h1>${esc(displayTitle(v.title))}</h1><div class="hero-actions"><span class="out-now">OUT NOW</span><button id="listenNowButton" class="listen-now">▶ Play</button></div>`;
   $('#listenNowButton').onclick=e=>{e.stopPropagation();selectTrack(v.id,true);};
 }
 
@@ -161,7 +169,7 @@ function applyFilters(){
 
 function renderList(){
   els.count.textContent=`${state.filtered.length} Tracks`;
-  els.list.innerHTML=state.filtered.map(v=>`<button class="track-row ${v.id===state.selectedId?'active':''}" data-id="${esc(v.id)}"><img src="${esc(v.thumbnail)}" alt=""><span class="track-copy"><strong>${esc(v.title)}</strong></span><span class="track-duration">${esc(v.duration||'')}</span><span class="track-play">▶</span></button>`).join('')||'<div class="status-box">No matching tracks found.</div>';
+  els.list.innerHTML=state.filtered.map(v=>`<button class="track-row ${v.id===state.selectedId?'active':''}" data-id="${esc(v.id)}"><img src="${esc(v.thumbnail)}" alt=""><span class="track-copy"><strong>${esc(displayTitle(v.title))}</strong></span><span class="track-duration">${esc(v.duration||'')}</span><span class="track-play">▶</span></button>`).join('')||'<div class="status-box">No matching tracks found.</div>';
   els.list.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>selectTrack(b.dataset.id,true));
 }
 
