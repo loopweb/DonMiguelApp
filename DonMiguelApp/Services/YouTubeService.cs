@@ -85,6 +85,15 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
 
         var uniqueRaw = raw
             .Where(x => x.TryGetProperty("contentDetails", out var details) && details.TryGetProperty("videoId", out _))
+            .Where(x =>
+            {
+                if (!x.TryGetProperty("snippet", out var snippet)) return false;
+                var title = snippet.TryGetProperty("title", out var titleElement)
+                    ? titleElement.GetString() ?? ""
+                    : "";
+                return !title.Equals("Private video", StringComparison.OrdinalIgnoreCase)
+                    && !title.Equals("Deleted video", StringComparison.OrdinalIgnoreCase);
+            })
             .GroupBy(x => x.GetProperty("contentDetails").GetProperty("videoId").GetString() ?? "")
             .Where(g => !string.IsNullOrWhiteSpace(g.Key))
             .Select(g => g.First())
@@ -131,6 +140,15 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
 
         var uniqueRaw = raw
             .Where(x => x.TryGetProperty("contentDetails", out var details) && details.TryGetProperty("videoId", out _))
+            .Where(x =>
+            {
+                if (!x.TryGetProperty("snippet", out var snippet)) return false;
+                var title = snippet.TryGetProperty("title", out var titleElement)
+                    ? titleElement.GetString() ?? ""
+                    : "";
+                return !title.Equals("Private video", StringComparison.OrdinalIgnoreCase)
+                    && !title.Equals("Deleted video", StringComparison.OrdinalIgnoreCase);
+            })
             .GroupBy(x => x.GetProperty("contentDetails").GetProperty("videoId").GetString() ?? "")
             .Where(g => !string.IsNullOrWhiteSpace(g.Key))
             .Select(g => g.First())
