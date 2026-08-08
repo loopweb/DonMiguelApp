@@ -298,6 +298,17 @@ $('#youtubeCommentButton').onclick=()=>openCurrentVideoOnYouTube(true);
 $('#musicLinks').innerHTML=linkGroups.music.map(([name,url,icon])=>`<a class="service-tile" href="${url}" target="_blank" rel="noopener"><span class="brand-icon-shell"><img class="service-logo" src="/assets/icons/${icon}" alt="${esc(name)}"></span><strong>${esc(name)}</strong></a>`).join('');
 $('#officialLinks').innerHTML=linkGroups.official.map(([name,url,sub,icon])=>`<a class="official-row" href="${url}" target="_blank" rel="noopener"><img class="official-logo" src="/assets/icons/${icon}" alt=""><span><strong>${esc(name)}</strong><small>${esc(sub)}</small></span><b>›</b></a>`).join('');
 $('#socialLinks').innerHTML=linkGroups.social.map(([name,url,icon])=>`<a class="social-tile compact-social-tile" href="${url}" target="_blank" rel="noopener"><img class="compact-social-logo" src="/assets/icons/${icon}" alt="${esc(name)}"><span>${esc(name)}</span></a>`).join('');
+syncDesktopLinks();
+
+
+function syncDesktopLinks(){
+  const dm=$('#desktopMusicLinks');
+  const dof=$('#desktopOfficialLinks');
+  const ds=$('#desktopSocialLinks');
+  if(dm)dm.innerHTML=$('#musicLinks')?.innerHTML||'';
+  if(dof)dof.innerHTML=$('#officialLinks')?.innerHTML||'';
+  if(ds)ds.innerHTML=$('#socialLinks')?.innerHTML||'';
+}
 
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
 load();

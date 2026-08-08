@@ -696,3 +696,250 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
     padding:8px 7px;
   }
 }
+
+
+/* ================================================================
+   v1.1 RESPONSIVE TABLET / DESKTOP
+   Mobile layout below 900px is intentionally untouched.
+   ================================================================ */
+
+.desktop-sidebar{display:none}
+
+/* Tablet / small laptop */
+@media (min-width:900px){
+  body{
+    background:
+      radial-gradient(circle at 70% 10%,rgba(212,166,55,.055),transparent 30%),
+      #020202;
+  }
+
+  .app-shell{
+    width:min(100%,1320px)!important;
+    margin:0 auto!important;
+    display:grid!important;
+    grid-template-columns:240px minmax(0,1fr)!important;
+    grid-template-rows:auto 1fr!important;
+    column-gap:0!important;
+    background:#050505!important;
+    border-left:1px solid #171717;
+    border-right:1px solid #171717;
+  }
+
+  .topbar{
+    grid-column:1 / -1!important;
+    grid-row:1!important;
+    height:82px!important;
+  }
+
+  .topbar #menuButton{
+    display:none!important;
+  }
+
+  .desktop-sidebar{
+    display:block!important;
+    grid-column:1!important;
+    grid-row:2!important;
+    align-self:stretch;
+    min-height:calc(100vh - 82px);
+    padding:22px 14px 120px;
+    border-right:1px solid #29200d;
+    background:linear-gradient(180deg,#070707 0%,#030303 100%);
+  }
+
+  .desktop-sidebar-brand{
+    display:grid;
+    text-align:center;
+    color:var(--gold);
+    padding:4px 8px 24px;
+    border-bottom:1px solid #211b0e;
+    margin-bottom:22px;
+  }
+
+  .desktop-sidebar-brand strong{
+    font-family:Georgia,serif;
+    font-size:1.22rem;
+    letter-spacing:.08em;
+  }
+
+  .desktop-sidebar-brand small{
+    font-size:.58rem;
+    letter-spacing:.22em;
+    margin-top:4px;
+  }
+
+  .desktop-side-section{
+    margin:0 0 24px;
+  }
+
+  .desktop-side-section h3{
+    margin:0 4px 9px;
+    color:var(--gold);
+    font-size:.72rem;
+    letter-spacing:.05em;
+    font-weight:800;
+  }
+
+  .desktop-service-links,
+  .desktop-social-links{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:7px;
+  }
+
+  .desktop-service-links .service-tile,
+  .desktop-social-links .social-tile{
+    min-height:48px!important;
+    height:48px!important;
+    border:1px solid #655017!important;
+    border-radius:9px!important;
+    padding:6px 9px!important;
+    background:#0b0b0b!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:9px!important;
+    text-align:left!important;
+  }
+
+  .desktop-service-links .service-logo,
+  .desktop-social-links .social-logo,
+  .desktop-social-links .compact-social-logo{
+    width:27px!important;
+    height:27px!important;
+    min-width:27px!important;
+    object-fit:contain!important;
+    display:block!important;
+  }
+
+  .desktop-service-links strong,
+  .desktop-social-links strong,
+  .desktop-social-links span{
+    display:block!important;
+    color:#fff!important;
+    font-size:.76rem!important;
+    font-weight:650!important;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .desktop-official-links{
+    display:grid;
+    gap:7px;
+  }
+
+  .desktop-official-links .official-link{
+    min-height:52px!important;
+  }
+
+  .app-shell > main{
+    grid-column:2!important;
+    grid-row:2!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:1080px!important;
+    justify-self:center!important;
+    padding-bottom:24px;
+  }
+
+  /* The hero remains exactly 16:9 on tablet and desktop. */
+  .hero{
+    width:100%!important;
+    aspect-ratio:16/9!important;
+    min-height:0!important;
+    height:auto!important;
+  }
+
+  .library{
+    padding:20px 22px 30px!important;
+  }
+
+  .search-wrap input{
+    padding-top:17px!important;
+    padding-bottom:17px!important;
+  }
+
+  .track-row{
+    min-height:64px;
+  }
+
+  /* Mini player spans only the content area, not the sidebar. */
+  .mini-player{
+    left:calc(50% + 120px)!important;
+    width:min(calc(100% - 240px),1080px)!important;
+    max-width:1080px!important;
+  }
+
+  /* Larger full player: video left, metadata/controls/comments right. */
+  .now-playing-dialog:not(.player-minimized){
+    width:min(94vw,1040px)!important;
+    max-width:1040px!important;
+    max-height:90vh!important;
+    grid-template-columns:minmax(360px,44%) minmax(0,56%);
+    grid-template-rows:64px minmax(0,1fr);
+    overflow:hidden;
+  }
+
+  .now-playing-dialog:not(.player-minimized)[open]{
+    display:grid!important;
+  }
+
+  .now-playing-dialog:not(.player-minimized) .dialog-header{
+    grid-column:1 / -1;
+    grid-row:1;
+  }
+
+  .now-playing-dialog:not(.player-minimized) .video-stage{
+    grid-column:1;
+    grid-row:2;
+    align-self:start;
+    width:100%;
+  }
+
+  .now-playing-dialog:not(.player-minimized) .now-playing-content{
+    grid-column:2;
+    grid-row:2;
+    overflow-y:auto;
+    padding:24px!important;
+  }
+
+  .now-playing-dialog:not(.player-minimized) .now-playing-content h1{
+    font-size:1.8rem!important;
+  }
+}
+
+/* Normal desktop / large laptop */
+@media (min-width:1200px){
+  .app-shell{
+    width:min(100%,1480px)!important;
+    grid-template-columns:280px minmax(0,1fr)!important;
+  }
+
+  .desktop-sidebar{
+    padding-left:18px;
+    padding-right:18px;
+  }
+
+  .app-shell > main{
+    max-width:1120px!important;
+  }
+
+  .mini-player{
+    left:calc(50% + 140px)!important;
+    width:min(calc(100% - 280px),1120px)!important;
+    max-width:1120px!important;
+  }
+
+  .library{
+    padding-left:28px!important;
+    padding-right:28px!important;
+  }
+}
+
+/* Very wide desktop: avoid stretching the app indefinitely. */
+@media (min-width:1600px){
+  .app-shell{
+    width:1480px!important;
+  }
+}
