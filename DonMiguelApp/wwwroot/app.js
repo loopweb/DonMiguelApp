@@ -64,6 +64,21 @@ const genres=Object.keys(PLAYLISTS);
 const preloaderStartedAt=Date.now();
 let preloaderClosed=false;
 
+
+function resetInstalledAppScrollPosition(){
+  const standalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+  if(!standalone || window.innerWidth < 900)return;
+  if('scrollRestoration' in history)history.scrollRestoration='manual';
+  requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'instant'}));
+  setTimeout(()=>window.scrollTo(0,0),80);
+}
+window.addEventListener('pageshow',resetInstalledAppScrollPosition);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')resetInstalledAppScrollPosition();
+});
+
 function wakeServer(){
   fetch('/health', {
     method:'GET',
