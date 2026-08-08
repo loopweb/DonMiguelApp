@@ -741,33 +741,11 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
     grid-row:2!important;
     align-self:stretch;
     min-height:calc(100vh - 82px);
-    padding:22px 14px 120px;
+    padding:18px 14px 120px;
     border-right:1px solid #29200d;
     background:linear-gradient(180deg,#070707 0%,#030303 100%);
   }
-
-  .desktop-sidebar-brand{
-    display:grid;
-    text-align:center;
-    color:var(--gold);
-    padding:4px 8px 24px;
-    border-bottom:1px solid #211b0e;
-    margin-bottom:22px;
-  }
-
-  .desktop-sidebar-brand strong{
-    font-family:Georgia,serif;
-    font-size:1.22rem;
-    letter-spacing:.08em;
-  }
-
-  .desktop-sidebar-brand small{
-    font-size:.58rem;
-    letter-spacing:.22em;
-    margin-top:4px;
-  }
-
-  .desktop-side-section{
+.desktop-side-section{
     margin:0 0 24px;
   }
 
@@ -941,5 +919,45 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
 @media (min-width:1600px){
   .app-shell{
     width:1480px!important;
+  }
+}
+
+
+/* v1.1.1 — INFO section for tablet/desktop sidebar */
+@media (min-width:900px){
+  .desktop-info-section{
+    margin-top:4px;
+    padding-top:2px;
+  }
+
+  .desktop-info-links{
+    display:grid;
+    gap:6px;
+  }
+
+  .desktop-info-links a,
+  .desktop-info-links > div{
+    min-height:42px;
+    padding:0 10px;
+    border:1px solid #332a17;
+    border-radius:8px;
+    background:#0a0a0a;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    text-decoration:none;
+    font-size:.74rem;
+  }
+
+  .desktop-info-links a b{
+    color:var(--gold);
+    font-size:1rem;
+    font-weight:600;
+  }
+
+  .desktop-info-links small{
+    color:#cfcfcf;
+    font-size:.68rem;
   }
 }
