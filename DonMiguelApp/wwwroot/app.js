@@ -108,11 +108,12 @@ function views(n=0){return new Intl.NumberFormat('en-US',{notation:n>=10000?'com
 function relativeDate(value){const d=new Date(value),days=Math.max(0,Math.floor((Date.now()-d.getTime())/86400000));if(days===0)return'today';if(days===1)return'1 day ago';if(days<7)return`${days} days ago`;if(days<31){const w=Math.floor(days/7);return`${w} week${w===1?'':'s'} ago`;}if(days<365){const m=Math.floor(days/30);return`${m} month${m===1?'':'s'} ago`;}const y=Math.floor(days/365);return`${y} year${y===1?'':'s'} ago`; }
 function check(r){if(!r.ok)throw new Error('Could not load content from YouTube.');return r.json();}
 
-async function fetchPlaylist(genre){
-  if(state.playlistCache.has(genre))return state.playlistCache.get(genre);
+async function fetchPlaylist(genre,force=false){
+  if(!force&&state.playlistCache.has(genre))return state.playlistCache.get(genre);
   const playlistId=PLAYLISTS[genre];
   if(!playlistId)throw new Error(`No playlist configured for ${genre}.`);
-  const videos=unique(await fetch(`/api/youtube/playlists/${encodeURIComponent(playlistId)}/videos`).then(check));
+  const suffix=force?`?_=${Date.now()}`:'';
+  const videos=unique(await fetch(`/api/youtube/playlists/${encodeURIComponent(playlistId)}/videos${suffix}`,force?{cache:'no-store'}:undefined).then(check));
   state.playlistCache.set(genre,videos);
   return videos;
 }
@@ -150,6 +151,125 @@ function displayTitle(title){
     .trim();
 }
 
+
+
+let pullRefreshBusy=false;
+
+async function refreshVisibleContent(){
+  if(pullRefreshBusy)return false;
+  pullRefreshBusy=true;
+  try{
+    const activeGenre=state.genre||'All';
+    const [freshTracks,freshLatest]=await Promise.all([
+      fetchPlaylist(activeGenre,true),
+      fetch(`/api/youtube/latest?_=${Date.now()}`,{cache:'no-store'}).then(check)
+    ]);
+
+    state.videos=freshTracks;
+    if(freshLatest?.id)state.latestVideo=freshLatest;
+
+    renderHero();
+    renderGenres();
+    applyFilters();
+    els.status.hidden=true;
+    return true;
+  }catch(e){
+    els.status.textContent=e.message||'Refresh failed.';
+    els.status.hidden=false;
+    return false;
+  }finally{
+    pullRefreshBusy=false;
+  }
+}
+
+function setupPullToRefresh(){
+  const indicator=$('#pullRefreshIndicator');
+  if(!indicator)return;
+
+  const arrow=indicator.querySelector('.pull-refresh-arrow');
+  const text=indicator.querySelector('.pull-refresh-text');
+  const threshold=74;
+  let startY=0;
+  let distance=0;
+  let tracking=false;
+
+  const isMobile=()=>window.innerWidth<900;
+  const dialogsOpen=()=>els.menu?.open || (els.nowDialog?.open && !els.nowDialog.classList.contains('player-minimized'));
+
+  function resetIndicator(delay=0){
+    setTimeout(()=>{
+      indicator.classList.remove('visible','ready','refreshing');
+      indicator.style.setProperty('--pull-distance','0px');
+      indicator.setAttribute('aria-hidden','true');
+      arrow.textContent='↓';
+      text.textContent='Pull to refresh';
+    },delay);
+  }
+
+  document.addEventListener('touchstart',e=>{
+    if(!isMobile()||pullRefreshBusy||dialogsOpen()||window.scrollY>0||e.touches.length!==1)return;
+    startY=e.touches[0].clientY;
+    distance=0;
+    tracking=true;
+  },{passive:true});
+
+  document.addEventListener('touchmove',e=>{
+    if(!tracking||e.touches.length!==1)return;
+    const delta=e.touches[0].clientY-startY;
+    if(delta<=0){
+      distance=0;
+      resetIndicator();
+      return;
+    }
+
+    // Resistance keeps the gesture controlled and prevents a huge displacement.
+    distance=Math.min(110,delta*.55);
+    if(distance<8)return;
+
+    e.preventDefault();
+    indicator.classList.add('visible');
+    indicator.setAttribute('aria-hidden','false');
+    indicator.style.setProperty('--pull-distance',`${distance}px`);
+
+    if(distance>=threshold){
+      indicator.classList.add('ready');
+      arrow.textContent='↻';
+      text.textContent='Release to refresh';
+    }else{
+      indicator.classList.remove('ready');
+      arrow.textContent='↓';
+      text.textContent='Pull to refresh';
+    }
+  },{passive:false});
+
+  document.addEventListener('touchend',async()=>{
+    if(!tracking)return;
+    tracking=false;
+
+    if(distance<threshold){
+      resetIndicator();
+      return;
+    }
+
+    indicator.classList.remove('ready');
+    indicator.classList.add('visible','refreshing');
+    indicator.style.setProperty('--pull-distance','54px');
+    arrow.textContent='↻';
+    text.textContent='Refreshing…';
+
+    const ok=await refreshVisibleContent();
+    text.textContent=ok?'Updated':'Could not refresh';
+    arrow.textContent=ok?'✓':'!';
+    resetIndicator(650);
+    distance=0;
+  },{passive:true});
+
+  document.addEventListener('touchcancel',()=>{
+    tracking=false;
+    distance=0;
+    resetIndicator();
+  },{passive:true});
+}
 
 async function refreshLatestRelease(){
   try{
@@ -340,6 +460,7 @@ function syncDesktopLinks(){
 
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
 load();
+setupPullToRefresh();
 
 
 wakeServer();
