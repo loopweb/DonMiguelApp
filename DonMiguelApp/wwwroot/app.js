@@ -187,7 +187,6 @@ function setupPullToRefresh(){
   if(!indicator)return;
 
   const arrow=indicator.querySelector('.pull-refresh-arrow');
-  const text=indicator.querySelector('.pull-refresh-text');
   const threshold=74;
   let startY=0;
   let distance=0;
@@ -202,7 +201,6 @@ function setupPullToRefresh(){
       indicator.style.setProperty('--pull-distance','0px');
       indicator.setAttribute('aria-hidden','true');
       arrow.textContent='↓';
-      text.textContent='Pull to refresh';
     },delay);
   }
 
@@ -234,11 +232,9 @@ function setupPullToRefresh(){
     if(distance>=threshold){
       indicator.classList.add('ready');
       arrow.textContent='↻';
-      text.textContent='Release to refresh';
     }else{
       indicator.classList.remove('ready');
       arrow.textContent='↓';
-      text.textContent='Pull to refresh';
     }
   },{passive:false});
 
@@ -255,10 +251,8 @@ function setupPullToRefresh(){
     indicator.classList.add('visible','refreshing');
     indicator.style.setProperty('--pull-distance','54px');
     arrow.textContent='↻';
-    text.textContent='Refreshing…';
 
     const ok=await refreshVisibleContent();
-    text.textContent=ok?'Updated':'Could not refresh';
     arrow.textContent=ok?'✓':'!';
     resetIndicator(650);
     distance=0;
