@@ -968,7 +968,7 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
   --pull-distance:0px;
   position:fixed;
   z-index:80;
-  top:calc(env(safe-area-inset-top,0px) + 34px);
+  top:calc(env(safe-area-inset-top,0px) + 25px);
   left:clamp(18px,5.5vw,34px);
   transform:translateY(calc(-54px + var(--pull-distance)));
   width:42px;
