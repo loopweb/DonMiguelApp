@@ -124,7 +124,7 @@ async function load(){
     if(!status.configured)throw new Error('YouTube API key is not configured.');
     const [allTracks, channelUploads]=await Promise.all([
       fetchPlaylist('All'),
-      fetch('/api/youtube/latest').then(check)
+      fetch(`/api/youtube/latest?_=${Date.now()}`,{cache:'no-store'}).then(check)
     ]);
     state.videos=allTracks;
     state.latestVideo=channelUploads||state.videos[0]||null;
@@ -148,6 +148,19 @@ function displayTitle(title){
   return String(title||'')
     .replace(/\s*[–—-]\s*Don Miguel de Cabarete(?:\s*[|–—-]\s*.*)?$/i,'')
     .trim();
+}
+
+
+async function refreshLatestRelease(){
+  try{
+    const latest=await fetch(`/api/youtube/latest?_=${Date.now()}`,{cache:'no-store'}).then(check);
+    if(!latest?.id)return;
+    if(state.latestVideo?.id===latest.id)return;
+    state.latestVideo=latest;
+    renderHero();
+  }catch{
+    // Keep the currently displayed hero if the refresh cannot reach the server.
+  }
 }
 
 function renderHero(){
@@ -333,4 +346,15 @@ wakeServer();
 
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible') wakeServer();
+});
+
+
+window.addEventListener('pageshow',()=>{
+  setTimeout(refreshLatestRelease,250);
+});
+window.addEventListener('focus',()=>{
+  setTimeout(refreshLatestRelease,250);
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')setTimeout(refreshLatestRelease,250);
 });

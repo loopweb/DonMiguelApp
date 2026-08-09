@@ -38,9 +38,21 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
         var channel = await GetChannelAsync(ct);
         if (channel is null || string.IsNullOrWhiteSpace(channel.UploadsPlaylistId)) return null;
 
-        var url = $"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId={Uri.EscapeDataString(channel.UploadsPlaylistId)}&maxResults=1&key={Uri.EscapeDataString(_apiKey)}";
+        var url = $"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId={Uri.EscapeDataString(channel.UploadsPlaylistId)}&maxResults=10&key={Uri.EscapeDataString(_apiKey)}";
         using var page = await GetJsonAsync(url, ct);
-        var item = page.RootElement.GetProperty("items").EnumerateArray().FirstOrDefault();
+
+        var item = page.RootElement.GetProperty("items").EnumerateArray()
+            .FirstOrDefault(x =>
+            {
+                if (!x.TryGetProperty("snippet", out var s)) return false;
+                var title = s.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
+                return !title.Equals("Private video", StringComparison.OrdinalIgnoreCase)
+                    && !title.Equals("Deleted video", StringComparison.OrdinalIgnoreCase)
+                    && x.TryGetProperty("contentDetails", out var cd)
+                    && cd.TryGetProperty("videoId", out var vid)
+                    && !string.IsNullOrWhiteSpace(vid.GetString());
+            });
+
         if (item.ValueKind == JsonValueKind.Undefined) return null;
 
         var snippet = item.GetProperty("snippet");
