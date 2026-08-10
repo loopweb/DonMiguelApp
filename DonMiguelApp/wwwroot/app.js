@@ -638,57 +638,82 @@ async function togglePushNotifications(){
 }
 
 
-function setPushDiag(key,value){
-  document.querySelectorAll(`[data-diag="${key}"]`).forEach(el=>el.textContent=value);
+
+function setPushDebug(key,value){
+  if(window.__DMC_SET_PUSH_DEBUG__)window.__DMC_SET_PUSH_DEBUG__(key,value);
 }
 
-async function refreshPushDiagnostics(){
-  setPushDiag('sdk',typeof window.OneSignalDeferred!=='undefined'?'YES':'NO');
-  setPushDiag('init',window.__DMC_ONE_SIGNAL__?'YES':'NO');
+async function refreshDetailedPushDebug(){
+  const dbg=window.__DMC_PUSH_DEBUG__||{};
+  setPushDebug('sdkScript', dbg.sdkScript || 'WAIT');
+  setPushDebug('initStarted', dbg.initStarted || 'NO');
+  setPushDebug('initFinished', dbg.initFinished || 'NO');
+  setPushDebug('initError', dbg.initError || '—');
+
+  try{
+    const r=await fetch(`/push/dmc/dmc-push-worker.js?t=${Date.now()}`,{cache:'no-store'});
+    setPushDebug('workerFile', r.ok ? `${r.status} OK` : `${r.status} FAIL`);
+  }catch(e){
+    setPushDebug('workerFile','FETCH ERROR');
+  }
 
   if(!('serviceWorker' in navigator)){
-    setPushDiag('sw','UNSUPPORTED');
+    setPushDebug('workerReg','UNSUPPORTED');
   }else{
     try{
       const regs=await navigator.serviceWorker.getRegistrations();
-      const reg=regs.find(r=>[r.active,r.installing,r.waiting].filter(Boolean)
-        .some(w=>w.scriptURL.includes('OneSignalSDKWorker.js')));
-      setPushDiag('sw',reg?'REGISTERED':'NOT FOUND');
+      const match=regs.find(r=>{
+        const workers=[r.active,r.waiting,r.installing].filter(Boolean);
+        return workers.some(w=>w.scriptURL.includes('dmc-push-worker.js'));
+      });
+      setPushDebug('workerReg', match ? 'YES' : 'NO');
+      if(!match){
+        console.info('Registered service workers:',
+          regs.map(r=>{
+            const w=r.active||r.waiting||r.installing;
+            return {scope:r.scope,scriptURL:w?.scriptURL||''};
+          })
+        );
+      }
     }catch(e){
-      setPushDiag('sw','ERROR');
+      setPushDebug('workerReg','ERROR');
     }
   }
 
-  setPushDiag(
+  setPushDebug(
     'support',
-    ('PushManager' in window && 'Notification' in window && 'serviceWorker' in navigator)?'YES':'NO'
+    ('PushManager' in window && 'Notification' in window && 'serviceWorker' in navigator) ? 'YES' : 'NO'
   );
-  setPushDiag('permission',('Notification' in window)?Notification.permission:'UNAVAILABLE');
+  setPushDebug(
+    'permission',
+    ('Notification' in window) ? Notification.permission : 'UNAVAILABLE'
+  );
 
   const os=window.__DMC_ONE_SIGNAL__;
   if(!os){
-    setPushDiag('subscription','NO SDK');
+    setPushDebug('subscription','NO SDK');
     return;
   }
 
   try{
     const p=os.User?.PushSubscription;
-    setPushDiag(
+    setPushDebug(
       'subscription',
-      p?.optedIn?'OPTED IN':(p?.id?'REGISTERED / OFF':'NOT SUBSCRIBED')
+      p?.optedIn ? 'OPTED IN' : (p?.id ? 'REGISTERED / OFF' : 'NOT SUBSCRIBED')
     );
   }catch(e){
-    setPushDiag('subscription','ERROR');
+    setPushDebug('subscription','ERROR');
   }
 }
 
-window.addEventListener('dmc-onesignal-ready',refreshPushDiagnostics);
-window.addEventListener('dmc-onesignal-error',e=>{
-  setPushDiag('init','ERROR');
-  setPushDiag('subscription',e?.detail||'INIT ERROR');
-});
+window.addEventListener('dmc-onesignal-ready',refreshDetailedPushDebug);
+window.addEventListener('dmc-onesignal-error',refreshDetailedPushDebug);
 window.addEventListener('load',()=>{
-  [300,1200,3000,7000].forEach(ms=>setTimeout(refreshPushDiagnostics,ms));
+  [250,750,1500,3000,6000,10000].forEach(ms=>setTimeout(refreshDetailedPushDebug,ms));
+});
+window.addEventListener('focus',()=>setTimeout(refreshDetailedPushDebug,250));
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')setTimeout(refreshDetailedPushDebug,250);
 });
 
 function setupPushNotificationControls(){
