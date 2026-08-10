@@ -1,7 +1,7 @@
 self.addEventListener('message',event=>{
   if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
 });
-const CACHE='donmiguel-v1.2.4-onesignal-fix';
+const CACHE='donmiguel-v1.2.9-pwa';
 const ASSETS=['/','/index.html','/styles.css','/app.js','/manifest.webmanifest','/assets/icons/spotify.svg','/assets/icons/applemusic.svg','/assets/icons/amazonmusic.svg','/assets/icons/youtubemusic.svg','/assets/icons/youtube.svg','/assets/icons/laut.svg','/assets/icons/homepage.svg','/assets/icons/unitedmasters.svg','/assets/icons/whatsapp.svg','/assets/icons/instagram.svg','/assets/icons/tiktok.svg','/assets/icons/facebook.svg','/assets/icons/x.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));

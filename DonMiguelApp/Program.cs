@@ -30,7 +30,8 @@ app.UseStaticFiles(new StaticFileOptions
         var path = ctx.Context.Request.Path.Value ?? string.Empty;
         var file = Path.GetFileName(path);
 
-        if (file.Equals("OneSignalSDKWorker.js", StringComparison.OrdinalIgnoreCase))
+        if (file.Equals("sw.js", StringComparison.OrdinalIgnoreCase)
+         || file.Equals("dmc-push-worker.js", StringComparison.OrdinalIgnoreCase))
         {
             ctx.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
         }
@@ -90,13 +91,15 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
 app.MapGet("/api/app-version", (HttpContext context) =>
 {
     context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-    return Results.Ok(new { version = "1.2.8" });
+    return Results.Ok(new { version = "1.2.9" });
 });
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 
-app.MapGet("/OneSignalSDKWorker.js", (HttpContext context) =>
+
+
+app.MapGet("/push/dmc/dmc-push-worker.js", (HttpContext context) =>
 {
     context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
     const string js = """

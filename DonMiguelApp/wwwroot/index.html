@@ -26,7 +26,9 @@
         await OneSignal.init({
           appId: "2cf0f3d8-b077-4ea6-b56b-e15831c8c24d",
           safari_web_id: "web.onesignal.auto.26872e49-0741-4e76-94b8-10ddfedc5443",
-          notifyButton: { enable: false }
+          notifyButton: { enable: false },
+          serviceWorkerPath: "push/dmc/dmc-push-worker.js",
+          serviceWorkerParam: { scope: "/push/dmc/" }
         });
         window.__DMC_ONE_SIGNAL__ = OneSignal;
         window.dispatchEvent(new Event('dmc-onesignal-ready'));
@@ -103,7 +105,7 @@
             <span>Privacy Policy</span><b>›</b>
           </a>
           <div>
-            <span>App Version</span><small>1.2.8</small>
+            <span>App Version</span><small>1.2.9</small>
           </div>
         </div>
       </section>
@@ -206,7 +208,7 @@
         <div class="info-links">
           <a href="https://donmiguel.nicepage.io/" target="_blank" rel="noopener"><span>Legal Notice</span><b>›</b></a>
           <a href="https://donmiguel.nicepage.io/" target="_blank" rel="noopener"><span>Privacy Policy</span><b>›</b></a>
-          <div><span>App Version</span><small>1.2.8</small></div>
+          <div><span>App Version</span><small>1.2.9</small></div>
         </div>
       </section>
     </div>
