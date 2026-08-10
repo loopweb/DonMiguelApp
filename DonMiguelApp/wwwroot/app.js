@@ -599,7 +599,7 @@ function refreshPushToggleUi(){
 }
 
 async function togglePushNotifications(){
-  if(!oneSignalUiReady || !oneSignalInstance){setPushToggleUi(false,'Push service not ready');return;}
+  if(!oneSignalUiReady || !oneSignalInstance){setPushToggleUi(false,'Tap to enable');return;}
 
   const OneSignal=oneSignalInstance;
   if(!OneSignal.Notifications.isPushSupported()){
@@ -639,87 +639,6 @@ async function togglePushNotifications(){
 
 
 
-function setPushDebug(key,value){
-  if(window.__DMC_SET_PUSH_DEBUG__)window.__DMC_SET_PUSH_DEBUG__(key,value);
-}
-
-async function refreshDetailedPushDebug(){
-  const dbg=window.__DMC_PUSH_DEBUG__||{};
-  setPushDebug('sdkScript', dbg.sdkScript || 'WAIT');
-  setPushDebug('initStarted', dbg.initStarted || 'NO');
-  setPushDebug('initFinished', dbg.initFinished || 'NO');
-  setPushDebug('initError', dbg.initError || '—');
-
-  try{
-    const r=await fetch(`/push/dmc/dmc-push-worker.js?t=${Date.now()}`,{cache:'no-store'});
-    setPushDebug('workerFile', r.ok ? `${r.status} OK` : `${r.status} FAIL`);
-  }catch(e){
-    setPushDebug('workerFile','FETCH ERROR');
-  }
-
-  if(!('serviceWorker' in navigator)){
-    setPushDebug('workerReg','UNSUPPORTED');
-  }else{
-    try{
-      const regs=await navigator.serviceWorker.getRegistrations();
-      const match=regs.find(r=>{
-        const workers=[r.active,r.waiting,r.installing].filter(Boolean);
-        return workers.some(w=>w.scriptURL.includes('dmc-push-worker.js'));
-      });
-      setPushDebug('workerReg', match ? 'YES' : 'NO');
-      if(!match){
-        console.info('Registered service workers:',
-          regs.map(r=>{
-            const w=r.active||r.waiting||r.installing;
-            return {scope:r.scope,scriptURL:w?.scriptURL||''};
-          })
-        );
-      }
-    }catch(e){
-      setPushDebug('workerReg','ERROR');
-    }
-  }
-
-  setPushDebug(
-    'support',
-    ('PushManager' in window && 'Notification' in window && 'serviceWorker' in navigator) ? 'YES' : 'NO'
-  );
-  setPushDebug(
-    'permission',
-    ('Notification' in window) ? Notification.permission : 'UNAVAILABLE'
-  );
-
-  const os=window.__DMC_ONE_SIGNAL__;
-  if(!os){
-    setPushDebug('subscription','NO SDK');
-    setPushDebug('subscriptionId','NONE');
-    setPushDebug('pushToken','NONE');
-    return;
-  }
-
-  try{
-    const p=os.User?.PushSubscription;
-    setPushDebug(
-      'subscription',
-      p?.optedIn ? 'OPTED IN' : (p?.id ? 'REGISTERED / OFF' : 'NOT SUBSCRIBED')
-    );
-    setPushDebug('subscriptionId', p?.id || 'NONE');
-    setPushDebug('pushToken', p?.token || 'NONE');
-  }catch(e){
-    setPushDebug('subscription','ERROR');
-  }
-}
-
-window.addEventListener('dmc-onesignal-ready',refreshDetailedPushDebug);
-window.addEventListener('dmc-onesignal-error',refreshDetailedPushDebug);
-window.addEventListener('load',()=>{
-  [250,750,1500,3000,6000,10000].forEach(ms=>setTimeout(refreshDetailedPushDebug,ms));
-});
-window.addEventListener('focus',()=>setTimeout(refreshDetailedPushDebug,250));
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible')setTimeout(refreshDetailedPushDebug,250);
-});
-
 function setupPushNotificationControls(){
   const mobile=$('#pushNotificationToggle');
   const desktop=$('#desktopPushNotificationToggle');
@@ -742,12 +661,12 @@ function setupPushNotificationControls(){
   window.addEventListener('dmc-onesignal-ready',()=>connect(window.__DMC_ONE_SIGNAL__),{once:true});
   window.addEventListener('dmc-onesignal-error',e=>{
     oneSignalUiReady=false;
-    setPushToggleUi(false,'Push setup error');
+    setPushToggleUi(false,'Could not connect');
     console.warn('OneSignal setup error',e.detail);
   },{once:true});
 
   setTimeout(()=>{
-    if(!oneSignalUiReady)setPushToggleUi(false,'Push service not ready');
+    if(!oneSignalUiReady)setPushToggleUi(false,'Tap to enable');
   },8000);
 }
 

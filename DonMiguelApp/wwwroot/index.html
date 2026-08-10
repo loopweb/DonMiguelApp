@@ -16,25 +16,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="DMC">
-
-
-  <script>
-    window.__DMC_PUSH_DEBUG__ = {
-      sdkScript: "WAIT",
-      initStarted: "NO",
-      initFinished: "NO",
-      initError: "—"
-    };
-    window.__DMC_SET_PUSH_DEBUG__ = function(key, value) {
-      window.__DMC_PUSH_DEBUG__[key] = String(value);
-      try {
-        document.querySelectorAll('[data-push-debug="' + key + '"]')
-          .forEach(function(el){ el.textContent = String(value); });
-      } catch (_) {}
-    };
-  </script>
-
-  <!-- OneSignal Web Push -->
+<!-- OneSignal Web Push -->
   <script>
     (function () {
       const standardUrl = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
@@ -45,11 +27,9 @@
         s.src = url;
         s.defer = true;
         s.onload = function () {
-          window.__DMC_SET_PUSH_DEBUG__("sdkScript", label + " LOADED");
-        };
+};
         s.onerror = function () {
-          window.__DMC_SET_PUSH_DEBUG__("sdkScript", label + " ERROR");
-          if (onFail) onFail();
+if (onFail) onFail();
         };
         document.head.appendChild(s);
       }
@@ -66,8 +46,7 @@
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
-      window.__DMC_SET_PUSH_DEBUG__('initStarted','YES');
-      try {
+try {
         await OneSignal.init({
           appId: "2cf0f3d8-b077-4ea6-b56b-e15831c8c24d",
           safari_web_id: "web.onesignal.auto.26872e49-0741-4e76-94b8-10ddfedc5443",
@@ -76,14 +55,12 @@
           serviceWorkerParam: { scope: "/push/dmc/" }
         });
         window.__DMC_ONE_SIGNAL__ = OneSignal;
-        window.__DMC_SET_PUSH_DEBUG__('initFinished','YES');
-        window.__DMC_SET_PUSH_DEBUG__('initError','—');
-        window.dispatchEvent(new Event('dmc-onesignal-ready'));
+
+window.dispatchEvent(new Event('dmc-onesignal-ready'));
       } catch (error) {
         const msg = String(error?.message || error);
-        window.__DMC_SET_PUSH_DEBUG__('initFinished','NO');
-        window.__DMC_SET_PUSH_DEBUG__('initError', msg);
-        console.error('OneSignal init failed', error);
+
+console.error('OneSignal init failed', error);
         window.dispatchEvent(new CustomEvent('dmc-onesignal-error', {
           detail: msg
         }));
@@ -136,19 +113,7 @@
         </div>
       </section>
 
-      <div id="desktopPushDiagnostics" class="push-debug-panel" aria-live="polite">
-        <div><span>SDK script</span><strong data-push-debug="sdkScript">WAIT</strong></div>
-        <div><span>Init started</span><strong data-push-debug="initStarted">NO</strong></div>
-        <div><span>Init finished</span><strong data-push-debug="initFinished">NO</strong></div>
-        <div><span>Init error</span><strong data-push-debug="initError">—</strong></div>
-        <div><span>Worker file</span><strong data-push-debug="workerFile">CHECKING</strong></div>
-        <div><span>Worker registered</span><strong data-push-debug="workerReg">CHECKING</strong></div>
-        <div><span>Push supported</span><strong data-push-debug="support">CHECKING</strong></div>
-        <div><span>Permission</span><strong data-push-debug="permission">CHECKING</strong></div>
-        <div><span>Subscription</span><strong data-push-debug="subscription">CHECKING</strong></div>
-        <div><span>Subscription ID</span><strong data-push-debug="subscriptionId">CHECKING</strong></div>
-        <div><span>Push Token</span><strong data-push-debug="pushToken">CHECKING</strong></div>
-      </div>
+      
 
       <section class="desktop-side-section desktop-info-section">
         <h3>ⓘ INFO</h3>
@@ -160,7 +125,7 @@
             <span>Privacy Policy</span><b>›</b>
           </a>
           <div>
-            <span>App Version</span><small>1.3.2</small>
+            <span>App Version</span><small>1.4.0</small>
           </div>
         </div>
       </section>
@@ -249,26 +214,14 @@
         </div>
       </section>
 
-      <div id="pushDiagnostics" class="push-debug-panel" aria-live="polite">
-        <div><span>SDK script</span><strong data-push-debug="sdkScript">WAIT</strong></div>
-        <div><span>Init started</span><strong data-push-debug="initStarted">NO</strong></div>
-        <div><span>Init finished</span><strong data-push-debug="initFinished">NO</strong></div>
-        <div><span>Init error</span><strong data-push-debug="initError">—</strong></div>
-        <div><span>Worker file</span><strong data-push-debug="workerFile">CHECKING</strong></div>
-        <div><span>Worker registered</span><strong data-push-debug="workerReg">CHECKING</strong></div>
-        <div><span>Push supported</span><strong data-push-debug="support">CHECKING</strong></div>
-        <div><span>Permission</span><strong data-push-debug="permission">CHECKING</strong></div>
-        <div><span>Subscription</span><strong data-push-debug="subscription">CHECKING</strong></div>
-        <div><span>Subscription ID</span><strong data-push-debug="subscriptionId">CHECKING</strong></div>
-        <div><span>Push Token</span><strong data-push-debug="pushToken">CHECKING</strong></div>
-      </div>
+      
 
       <section class="link-section info-section">
         <h3>ⓘ INFO</h3>
         <div class="info-links">
           <a href="https://donmiguel.nicepage.io/" target="_blank" rel="noopener"><span>Legal Notice</span><b>›</b></a>
           <a href="https://donmiguel.nicepage.io/" target="_blank" rel="noopener"><span>Privacy Policy</span><b>›</b></a>
-          <div><span>App Version</span><small>1.3.2</small></div>
+          <div><span>App Version</span><small>1.4.0</small></div>
         </div>
       </section>
     </div>
