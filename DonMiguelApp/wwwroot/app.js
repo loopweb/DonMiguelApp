@@ -498,7 +498,7 @@ async function setupPwaUpdater(){
 
   try{
     const registration=await navigator.serviceWorker.register(
-      `/sw.js?v=${encodeURIComponent(APP_VERSION)}`,
+      `/OneSignalSDKWorker.js?v=${encodeURIComponent(APP_VERSION)}`,
       {updateViaCache:'none'}
     );
 
