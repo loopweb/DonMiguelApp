@@ -60,9 +60,9 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
             name = ReleaseMessageName(video.Id),
             headings = new
             {
-                en = "New Release",
-                de = "Neuer Release",
-                es = "Nuevo lanzamiento"
+                en = "Don Miguel – New Release",
+                de = "Don Miguel – New Release",
+                es = "Don Miguel – New Release"
             },
             contents = new
             {
