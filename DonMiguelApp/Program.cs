@@ -23,7 +23,26 @@ if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RENDER")))
     app.UseHttpsRedirection();
 }
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var path = ctx.Context.Request.Path.Value ?? string.Empty;
+        var file = Path.GetFileName(path);
+
+        if (file.Equals("sw.js", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+        }
+        else if (file.Equals("index.html", StringComparison.OrdinalIgnoreCase)
+              || file.Equals("app.js", StringComparison.OrdinalIgnoreCase)
+              || file.Equals("styles.css", StringComparison.OrdinalIgnoreCase)
+              || file.Equals("manifest.webmanifest", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.CacheControl = "no-cache, must-revalidate, max-age=0";
+        }
+    }
+});
 
 app.MapGet("/api/status", (YouTubeService yt, IConfiguration cfg) => Results.Ok(new
 {
@@ -66,6 +85,12 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
 {
     try { return Results.Ok(await yt.GetCommentsAsync(videoId, ct)); }
     catch (Exception ex) { return Results.Problem(ex.Message, statusCode: 503); }
+});
+
+app.MapGet("/api/app-version", (HttpContext context) =>
+{
+    context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+    return Results.Ok(new { version = "1.2.1" });
 });
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));

@@ -360,7 +360,15 @@ function indexInActive(){
 }
 function step(direction){const{list,index}=indexInActive();if(!list.length)return;const next=state.shuffle?Math.floor(Math.random()*list.length):(index+direction+list.length)%list.length;selectTrack(list[next].id,false);}
 function togglePlay(){if(!state.playerReady){state.pendingPlay=true;state.pendingVideoId=state.selectedId;return;}if(state.playing){state.pendingPlay=false;state.player.pauseVideo();}else{state.pendingPlay=true;state.pendingVideoId=state.selectedId;state.player.playVideo();}}
-function syncPlayIcons(){const icon=state.playing?'Ⅱ':'▶';els.miniPlay.textContent=icon;els.dialogPlay.textContent=icon;}
+function syncPlayIcons(){
+  const icon=state.playing?'Ⅱ':'▶';
+  els.miniPlay.textContent=icon;
+  els.dialogPlay.textContent=icon;
+  if(!state.playing&&pwaUpdateReloadPending){
+    pwaUpdateReloadPending=false;
+    safeReloadForUpdate();
+  }
+}
 
 async function loadComments(id){
   els.comments.innerHTML='<p class="muted">Loading comments …</p>';
@@ -452,7 +460,85 @@ function syncDesktopLinks(){
   if(ds)ds.innerHTML=$('#socialLinks')?.innerHTML||'';
 }
 
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
+const APP_VERSION='1.2.1';
+let pwaUpdateReloadPending=false;
+
+function safeReloadForUpdate(){
+  if(state.playing){
+    pwaUpdateReloadPending=true;
+    return;
+  }
+  const key=`dmc-update-reload-${APP_VERSION}`;
+  if(sessionStorage.getItem(key)==='1')return;
+  sessionStorage.setItem(key,'1');
+  window.location.replace(`/?updated=${encodeURIComponent(APP_VERSION)}&t=${Date.now()}`);
+}
+
+async function checkPwaUpdate(registration){
+  try{
+    const response=await fetch(`/api/app-version?t=${Date.now()}`,{cache:'no-store'});
+    if(response.ok){
+      const data=await response.json();
+      if(data?.version && data.version!==APP_VERSION){
+        await registration.update();
+      }
+    }
+  }catch{}
+
+  try{
+    await registration.update();
+    if(registration.waiting){
+      registration.waiting.postMessage({type:'SKIP_WAITING'});
+    }
+  }catch{}
+}
+
+async function setupPwaUpdater(){
+  if(!('serviceWorker' in navigator))return;
+
+  try{
+    const registration=await navigator.serviceWorker.register(
+      `/sw.js?v=${encodeURIComponent(APP_VERSION)}`,
+      {updateViaCache:'none'}
+    );
+
+    const handleWaiting=()=>{
+      if(registration.waiting){
+        registration.waiting.postMessage({type:'SKIP_WAITING'});
+      }
+    };
+
+    registration.addEventListener('updatefound',()=>{
+      const worker=registration.installing;
+      if(!worker)return;
+      worker.addEventListener('statechange',()=>{
+        if(worker.state==='installed' && navigator.serviceWorker.controller){
+          handleWaiting();
+        }
+      });
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      safeReloadForUpdate();
+    });
+
+    await checkPwaUpdate(registration);
+
+    window.addEventListener('pageshow',()=>checkPwaUpdate(registration));
+    window.addEventListener('focus',()=>checkPwaUpdate(registration));
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible')checkPwaUpdate(registration);
+    });
+
+    setInterval(()=>{
+      if(document.visibilityState==='visible')checkPwaUpdate(registration);
+    },5*60*1000);
+  }catch(e){
+    console.warn('PWA updater unavailable',e);
+  }
+}
+
+window.addEventListener('load',setupPwaUpdater);
 load();
 setupPullToRefresh();
 
@@ -473,58 +559,3 @@ window.addEventListener('focus',()=>{
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible')setTimeout(refreshLatestRelease,250);
 });
-
-
-function setupPushNotificationPreference(){
-  const toggles=[...document.querySelectorAll('[data-push-toggle]')];
-  const statuses=[...document.querySelectorAll('[data-push-status]')];
-  if(!toggles.length)return;
-
-  const setUi=(checked,label,disabled=false)=>{
-    toggles.forEach(t=>{
-      t.checked=!!checked;
-      t.disabled=!!disabled;
-      t.setAttribute('aria-checked',checked?'true':'false');
-    });
-    statuses.forEach(s=>s.textContent=label);
-  };
-
-  window.OneSignalDeferred=window.OneSignalDeferred||[];
-  OneSignalDeferred.push(async function(OneSignal){
-    const supported=OneSignal.Notifications.isPushSupported();
-    if(!supported){
-      setUi(false,'Not supported on this device',true);
-      return;
-    }
-
-    const sync=()=>{
-      const enabled=!!OneSignal.User.PushSubscription.optedIn;
-      setUi(enabled,enabled?'Enabled':'Off',false);
-    };
-
-    sync();
-
-    OneSignal.User.PushSubscription.addEventListener('change',sync);
-    OneSignal.Notifications.addEventListener('permissionChange',sync);
-
-    toggles.forEach(toggle=>{
-      toggle.addEventListener('change',async()=>{
-        toggles.forEach(t=>t.disabled=true);
-        statuses.forEach(s=>s.textContent=toggle.checked?'Activating…':'Turning off…');
-        try{
-          if(toggle.checked){
-            await OneSignal.User.PushSubscription.optIn();
-          }else{
-            await OneSignal.User.PushSubscription.optOut();
-          }
-        }catch(e){
-          console.warn('Push preference change failed',e);
-        }finally{
-          sync();
-        }
-      });
-    });
-  });
-}
-
-setupPushNotificationPreference();
