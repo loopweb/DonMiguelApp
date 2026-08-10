@@ -1,1 +1,22 @@
+name: Check new Don Miguel release
 
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake Render and check for new release
+        env:
+          PUSH_CHECK_SECRET: ${{ secrets.PUSH_CHECK_SECRET }}
+        run: |
+          curl --fail-with-body \
+            --retry 2 \
+            --retry-delay 20 \
+            --max-time 180 \
+            -X POST \
+            -H "X-DMC-Push-Secret: ${PUSH_CHECK_SECRET}" \
+            "https://donmiguelapp.onrender.com/api/push/check-release"
