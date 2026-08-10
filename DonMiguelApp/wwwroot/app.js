@@ -565,7 +565,44 @@ function setPushToggleUi(on,status){
     if(!button)return;
     button.classList.toggle('is-on',!!on);
     button.setAttribute('aria-pressed',on?'true':'false');
-    if(label)label.textContent=status;
+    if(label)label.textCon
+  // ---- Temporary OneSignal diagnostics (v1.2.6) ----
+  function setPushDiag(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+  async function refreshPushDiagnostics() {
+    setPushDiag('diagSdk', typeof window.OneSignalDeferred !== 'undefined' ? 'YES' : 'NO');
+    setPushDiag('diagInit', window.__DMC_ONE_SIGNAL__ ? 'YES' : 'NO');
+    if (!('serviceWorker' in navigator)) {
+      setPushDiag('diagSw', 'UNSUPPORTED');
+    } else {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        const reg = regs.find(r => [r.active,r.installing,r.waiting].filter(Boolean)
+          .some(w => w.scriptURL.includes('OneSignalSDKWorker.js')));
+        setPushDiag('diagSw', reg ? 'REGISTERED' : 'NOT FOUND');
+      } catch (_) { setPushDiag('diagSw', 'ERROR'); }
+    }
+    setPushDiag('diagSupport', ('PushManager' in window && 'Notification' in window && 'serviceWorker' in navigator) ? 'YES' : 'NO');
+    setPushDiag('diagPermission', ('Notification' in window) ? Notification.permission : 'UNAVAILABLE');
+    const os = window.__DMC_ONE_SIGNAL__;
+    if (!os) { setPushDiag('diagSubscription', 'NO SDK'); return; }
+    try {
+      const p=os.User?.PushSubscription;
+      setPushDiag('diagSubscription', p?.optedIn ? 'OPTED IN' : (p?.id ? 'REGISTERED / OFF' : 'NOT SUBSCRIBED'));
+    } catch (_) { setPushDiag('diagSubscription', 'ERROR'); }
+  }
+  window.addEventListener('dmc-onesignal-ready', refreshPushDiagnostics);
+  window.addEventListener('dmc-onesignal-error', e => {
+    setPushDiag('diagInit','ERROR');
+    setPushDiag('diagSubscription', e?.detail || 'INIT ERROR');
+  });
+  window.addEventListener('load', () => {
+    [500,2500,6000].forEach(ms => setTimeout(refreshPushDiagnostics, ms));
+  });
+
+tent=status;
   });
 }
 
