@@ -1139,3 +1139,34 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
 .notification-links .info-toggle-row{min-height:72px;padding:12px 14px;border-top:0}
 .desktop-notification-section{margin-top:14px}
 .desktop-notification-links .desktop-push-toggle{margin-bottom:0}
+
+
+/* v1.2.7 — temporary push diagnostics */
+.push-diagnostics{
+  margin:10px 0 18px;
+  padding:11px 13px;
+  border:1px solid #3a3325;
+  border-radius:12px;
+  background:#0d0d0d;
+  font-size:.72rem;
+  color:#aaa;
+}
+.push-diagnostics>div{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:5px 0;
+  border-bottom:1px solid #202020;
+}
+.push-diagnostics>div:last-child{border-bottom:0}
+.push-diagnostics strong{
+  color:var(--gold);
+  font-size:.7rem;
+  font-weight:800;
+  text-align:right;
+}
+@media(min-width:900px){
+  .push-diagnostics{margin:8px 0 16px;font-size:.66rem}
+  .push-diagnostics strong{font-size:.64rem}
+}
