@@ -91,7 +91,7 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
 app.MapGet("/api/app-version", (HttpContext context) =>
 {
     context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-    return Results.Ok(new { version = "1.3.1" });
+    return Results.Ok(new { version = "1.3.2" });
 });
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));

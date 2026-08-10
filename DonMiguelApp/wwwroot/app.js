@@ -692,6 +692,8 @@ async function refreshDetailedPushDebug(){
   const os=window.__DMC_ONE_SIGNAL__;
   if(!os){
     setPushDebug('subscription','NO SDK');
+    setPushDebug('subscriptionId','NONE');
+    setPushDebug('pushToken','NONE');
     return;
   }
 
@@ -701,6 +703,8 @@ async function refreshDetailedPushDebug(){
       'subscription',
       p?.optedIn ? 'OPTED IN' : (p?.id ? 'REGISTERED / OFF' : 'NOT SUBSCRIBED')
     );
+    setPushDebug('subscriptionId', p?.id || 'NONE');
+    setPushDebug('pushToken', p?.token || 'NONE');
   }catch(e){
     setPushDebug('subscription','ERROR');
   }
