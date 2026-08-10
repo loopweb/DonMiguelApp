@@ -539,6 +539,123 @@ async function setupPwaUpdater(){
 }
 
 window.addEventListener('load',setupPwaUpdater);
+
+
+let oneSignalUiReady=false;
+let oneSignalInstance=null;
+
+function isStandaloneApp(){
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+function isIOSDevice(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+         (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+}
+
+function setPushToggleUi(on,status){
+  const rows=[
+    ['#pushNotificationToggle','#pushNotificationStatus'],
+    ['#desktopPushNotificationToggle','#desktopPushNotificationStatus']
+  ];
+  rows.forEach(([buttonSelector,statusSelector])=>{
+    const button=$(buttonSelector);
+    const label=$(statusSelector);
+    if(!button)return;
+    button.classList.toggle('is-on',!!on);
+    button.setAttribute('aria-pressed',on?'true':'false');
+    if(label)label.textContent=status;
+  });
+}
+
+function refreshPushToggleUi(){
+  if(!oneSignalInstance){
+    setPushToggleUi(false,'Push unavailable');
+    return;
+  }
+
+  const supported=oneSignalInstance.Notifications.isPushSupported();
+  if(!supported){
+    setPushToggleUi(false,'Not supported on this device');
+    return;
+  }
+
+  if(isIOSDevice() && !isStandaloneApp()){
+    setPushToggleUi(false,'Install app to enable');
+    return;
+  }
+
+  const permission=oneSignalInstance.Notifications.permission;
+  const optedIn=oneSignalInstance.User.PushSubscription.optedIn === true;
+
+  if(permission && optedIn){
+    setPushToggleUi(true,'Enabled');
+  }else if(permission && !optedIn){
+    setPushToggleUi(false,'Disabled');
+  }else{
+    setPushToggleUi(false,'Tap to enable');
+  }
+}
+
+async function togglePushNotifications(){
+  if(!oneSignalUiReady || !oneSignalInstance)return;
+
+  const OneSignal=oneSignalInstance;
+  if(!OneSignal.Notifications.isPushSupported()){
+    setPushToggleUi(false,'Not supported on this device');
+    return;
+  }
+
+  if(isIOSDevice() && !isStandaloneApp()){
+    setPushToggleUi(false,'Add app to Home Screen first');
+    alert('On iPhone, push notifications work only from the installed Don Miguel App. Add it to the Home Screen and open it from there.');
+    return;
+  }
+
+  try{
+    const currentlyOptedIn=OneSignal.User.PushSubscription.optedIn === true;
+
+    if(currentlyOptedIn){
+      OneSignal.User.PushSubscription.optOut();
+      setTimeout(refreshPushToggleUi,150);
+      return;
+    }
+
+    if(!OneSignal.Notifications.permission){
+      await OneSignal.Notifications.requestPermission();
+    }
+
+    if(OneSignal.Notifications.permission){
+      OneSignal.User.PushSubscription.optIn();
+    }
+
+    setTimeout(refreshPushToggleUi,250);
+  }catch(e){
+    console.warn('Push toggle failed',e);
+    setPushToggleUi(false,'Could not enable');
+  }
+}
+
+function setupPushNotificationControls(){
+  const mobile=$('#pushNotificationToggle');
+  const desktop=$('#desktopPushNotificationToggle');
+  if(mobile)mobile.addEventListener('click',togglePushNotifications);
+  if(desktop)desktop.addEventListener('click',togglePushNotifications);
+
+  window.OneSignalDeferred=window.OneSignalDeferred||[];
+  OneSignalDeferred.push(function(OneSignal){
+    oneSignalInstance=OneSignal;
+    oneSignalUiReady=true;
+
+    refreshPushToggleUi();
+
+    OneSignal.User.PushSubscription.addEventListener('change',refreshPushToggleUi);
+    OneSignal.Notifications.addEventListener('permissionChange',refreshPushToggleUi);
+  });
+}
+
+window.addEventListener('load',setupPushNotificationControls);
 load();
 setupPullToRefresh();
 

@@ -1019,3 +1019,123 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
   .pull-refresh-indicator{display:none!important}
 }
 
+
+
+/* v1.2.2 — New Release Notifications toggle */
+.info-toggle-row,
+.desktop-push-toggle{
+  width:100%;
+  border:0;
+  color:#fff;
+  background:transparent;
+  font:inherit;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  text-align:left;
+  box-sizing:border-box;
+}
+
+.info-links .info-toggle-row{
+  min-height:62px;
+  padding:10px 14px;
+  border-top:1px solid #2b2b2b;
+}
+
+.info-toggle-row > span,
+.desktop-push-toggle > span{
+  display:grid;
+  gap:3px;
+  min-width:0;
+}
+
+.info-toggle-row strong,
+.desktop-push-toggle strong{
+  font-weight:500;
+  color:#fff;
+}
+
+.info-toggle-row small,
+.desktop-push-toggle small{
+  color:#aaa;
+  font-size:.72rem;
+}
+
+.toggle-switch{
+  width:42px;
+  height:24px;
+  min-width:42px;
+  border:1px solid #555;
+  border-radius:14px;
+  background:#222;
+  position:relative;
+  display:block;
+  transition:.18s ease;
+}
+
+.toggle-switch em{
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:#999;
+  transition:.18s ease;
+}
+
+.info-toggle-row.is-on .toggle-switch,
+.desktop-push-toggle.is-on .toggle-switch{
+  border-color:var(--gold);
+  background:rgba(212,166,55,.20);
+}
+
+.info-toggle-row.is-on .toggle-switch em,
+.desktop-push-toggle.is-on .toggle-switch em{
+  left:21px;
+  background:var(--gold);
+}
+
+@media(min-width:900px){
+  .desktop-push-toggle{
+    min-height:50px;
+    padding:7px 10px;
+    border:1px solid #332a17;
+    border-radius:8px;
+    background:#0a0a0a;
+    margin-bottom:6px;
+  }
+
+  .desktop-push-toggle strong{
+    font-size:.72rem;
+    line-height:1.15;
+  }
+
+  .desktop-push-toggle small{
+    font-size:.62rem;
+  }
+
+  .desktop-push-toggle .toggle-switch{
+    width:34px;
+    height:20px;
+    min-width:34px;
+  }
+
+  .desktop-push-toggle .toggle-switch em{
+    width:14px;
+    height:14px;
+    top:2px;
+    left:2px;
+  }
+
+  .desktop-push-toggle.is-on .toggle-switch em{
+    left:17px;
+  }
+}
+
+/* v1.2.2 layout refinement: dedicated Notifications section */
+.notification-section{margin-top:18px}
+.notification-links .info-toggle-row{min-height:72px;padding:12px 14px;border-top:0}
+.desktop-notification-section{margin-top:14px}
+.desktop-notification-links .desktop-push-toggle{margin-bottom:0}
