@@ -90,10 +90,20 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
 app.MapGet("/api/app-version", (HttpContext context) =>
 {
     context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-    return Results.Ok(new { version = "1.2.7" });
+    return Results.Ok(new { version = "1.2.8" });
 });
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
+
+app.MapGet("/OneSignalSDKWorker.js", (HttpContext context) =>
+{
+    context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+    const string js = """
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+""";
+    return Results.Text(js, "application/javascript; charset=utf-8");
+});
 
 app.MapFallbackToFile("index.html");
 app.Run();
