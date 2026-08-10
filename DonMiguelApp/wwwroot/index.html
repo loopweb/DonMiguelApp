@@ -24,8 +24,8 @@
     OneSignalDeferred.push(async function(OneSignal) {
       await OneSignal.init({
         appId: "2cf0f3d8-b077-4ea6-b56b-e15831c8c24d",
-        serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
-        serviceWorkerParam: { scope: "/push/onesignal/" }
+        serviceWorkerPath: "/sw.js",
+        serviceWorkerParam: { scope: "/" }
       });
     });
   </script>
@@ -85,7 +85,7 @@
             <span>Privacy Policy</span><b>›</b>
           </a>
           <div>
-            <span>App Version</span><small>1.2.2</small>
+            <span>App Version</span><small>1.2.3</small>
           </div>
         </div>
       </section>
@@ -179,7 +179,7 @@
         <div class="info-links">
           <a href="https://donmiguel.nicepage.io/" target="_blank" rel="noopener"><span>Legal Notice</span><b>›</b></a>
           <a href="https://donmiguel.nicepage.io/" target="_blank" rel="noopener"><span>Privacy Policy</span><b>›</b></a>
-          <div><span>App Version</span><small>1.2.2</small></div>
+          <div><span>App Version</span><small>1.2.3</small></div>
         </div>
       </section>
     </div>
