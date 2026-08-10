@@ -22,11 +22,21 @@
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
-      await OneSignal.init({
-        appId: "2cf0f3d8-b077-4ea6-b56b-e15831c8c24d",
-        serviceWorkerPath: "/sw.js",
-        serviceWorkerParam: { scope: "/" }
-      });
+      try {
+        await OneSignal.init({
+          appId: "2cf0f3d8-b077-4ea6-b56b-e15831c8c24d",
+          safari_web_id: "web.onesignal.auto.26872e49-0741-4e76-94b8-10ddfedc5443",
+          autoResubscribe: true,
+          notifyButton: { enable: false },
+          serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
+          serviceWorkerParam: { scope: "/push/onesignal/" }
+        });
+        window.__DMC_ONE_SIGNAL__ = OneSignal;
+        window.dispatchEvent(new Event('dmc-onesignal-ready'));
+      } catch (error) {
+        console.error('OneSignal init failed', error);
+        window.dispatchEvent(new CustomEvent('dmc-onesignal-error', { detail: String(error?.message || error) }));
+      }
     });
   </script>
 </head>
@@ -85,7 +95,7 @@
             <span>Privacy Policy</span><b>›</b>
           </a>
           <div>
-            <span>App Version</span><small>1.2.3</small>
+            <span>App Version</span><small>1.2.4</small>
           </div>
         </div>
       </section>
@@ -179,7 +189,7 @@
         <div class="info-links">
           <a href="https://donmiguel.nicepage.io/" target="_blank" rel="noopener"><span>Legal Notice</span><b>›</b></a>
           <a href="https://donmiguel.nicepage.io/" target="_blank" rel="noopener"><span>Privacy Policy</span><b>›</b></a>
-          <div><span>App Version</span><small>1.2.3</small></div>
+          <div><span>App Version</span><small>1.2.4</small></div>
         </div>
       </section>
     </div>

@@ -599,7 +599,7 @@ function refreshPushToggleUi(){
 }
 
 async function togglePushNotifications(){
-  if(!oneSignalUiReady || !oneSignalInstance)return;
+  if(!oneSignalUiReady || !oneSignalInstance){setPushToggleUi(false,'Push service not ready');return;}
 
   const OneSignal=oneSignalInstance;
   if(!OneSignal.Notifications.isPushSupported()){
@@ -643,16 +643,29 @@ function setupPushNotificationControls(){
   if(mobile)mobile.addEventListener('click',togglePushNotifications);
   if(desktop)desktop.addEventListener('click',togglePushNotifications);
 
-  window.OneSignalDeferred=window.OneSignalDeferred||[];
-  OneSignalDeferred.push(function(OneSignal){
+  const connect=(OneSignal)=>{
+    if(!OneSignal)return;
     oneSignalInstance=OneSignal;
     oneSignalUiReady=true;
-
     refreshPushToggleUi();
+    try{
+      OneSignal.User.PushSubscription.addEventListener('change',refreshPushToggleUi);
+      OneSignal.Notifications.addEventListener('permissionChange',refreshPushToggleUi);
+    }catch(e){console.warn('OneSignal listeners unavailable',e);}
+  };
 
-    OneSignal.User.PushSubscription.addEventListener('change',refreshPushToggleUi);
-    OneSignal.Notifications.addEventListener('permissionChange',refreshPushToggleUi);
-  });
+  if(window.__DMC_ONE_SIGNAL__)connect(window.__DMC_ONE_SIGNAL__);
+
+  window.addEventListener('dmc-onesignal-ready',()=>connect(window.__DMC_ONE_SIGNAL__),{once:true});
+  window.addEventListener('dmc-onesignal-error',e=>{
+    oneSignalUiReady=false;
+    setPushToggleUi(false,'Push setup error');
+    console.warn('OneSignal setup error',e.detail);
+  },{once:true});
+
+  setTimeout(()=>{
+    if(!oneSignalUiReady)setPushToggleUi(false,'Push service not ready');
+  },8000);
 }
 
 window.addEventListener('load',setupPushNotificationControls);
