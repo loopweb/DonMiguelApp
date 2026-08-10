@@ -473,3 +473,58 @@ window.addEventListener('focus',()=>{
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible')setTimeout(refreshLatestRelease,250);
 });
+
+
+function setupPushNotificationPreference(){
+  const toggles=[...document.querySelectorAll('[data-push-toggle]')];
+  const statuses=[...document.querySelectorAll('[data-push-status]')];
+  if(!toggles.length)return;
+
+  const setUi=(checked,label,disabled=false)=>{
+    toggles.forEach(t=>{
+      t.checked=!!checked;
+      t.disabled=!!disabled;
+      t.setAttribute('aria-checked',checked?'true':'false');
+    });
+    statuses.forEach(s=>s.textContent=label);
+  };
+
+  window.OneSignalDeferred=window.OneSignalDeferred||[];
+  OneSignalDeferred.push(async function(OneSignal){
+    const supported=OneSignal.Notifications.isPushSupported();
+    if(!supported){
+      setUi(false,'Not supported on this device',true);
+      return;
+    }
+
+    const sync=()=>{
+      const enabled=!!OneSignal.User.PushSubscription.optedIn;
+      setUi(enabled,enabled?'Enabled':'Off',false);
+    };
+
+    sync();
+
+    OneSignal.User.PushSubscription.addEventListener('change',sync);
+    OneSignal.Notifications.addEventListener('permissionChange',sync);
+
+    toggles.forEach(toggle=>{
+      toggle.addEventListener('change',async()=>{
+        toggles.forEach(t=>t.disabled=true);
+        statuses.forEach(s=>s.textContent=toggle.checked?'Activating…':'Turning off…');
+        try{
+          if(toggle.checked){
+            await OneSignal.User.PushSubscription.optIn();
+          }else{
+            await OneSignal.User.PushSubscription.optOut();
+          }
+        }catch(e){
+          console.warn('Push preference change failed',e);
+        }finally{
+          sync();
+        }
+      });
+    });
+  });
+}
+
+setupPushNotificationPreference();
