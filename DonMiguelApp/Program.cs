@@ -17,6 +17,12 @@ builder.Services.AddHttpClient<YouTubeService>(client =>
     client.DefaultRequestHeaders.UserAgent.ParseAdd("DonMiguelApp/3.0");
 });
 
+builder.Services.AddHttpClient<PushNotificationService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("DonMiguelApp/1.5");
+});
+
 var app = builder.Build();
 if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RENDER")))
 {
@@ -91,7 +97,70 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
 app.MapGet("/api/app-version", (HttpContext context) =>
 {
     context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-    return Results.Ok(new { version = "1.4.0" });
+    return Results.Ok(new { version = "1.5.0" });
+});
+
+
+app.MapPost("/api/push/check-release", async (
+    HttpContext context,
+    YouTubeService yt,
+    PushNotificationService push,
+    IConfiguration cfg,
+    CancellationToken ct) =>
+{
+    var configuredSecret = cfg["PushCheck:Secret"] ?? string.Empty;
+    var suppliedSecret = context.Request.Headers["X-DMC-Push-Secret"].ToString();
+
+    if (string.IsNullOrWhiteSpace(configuredSecret) ||
+        string.IsNullOrWhiteSpace(suppliedSecret) ||
+        !System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+            System.Text.Encoding.UTF8.GetBytes(configuredSecret),
+            System.Text.Encoding.UTF8.GetBytes(suppliedSecret)))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!push.IsConfigured)
+        return Results.Problem("OneSignal server API is not configured.", statusCode: 503);
+
+    var latest = await yt.GetLatestVideoAsync(ct);
+    if (latest is null)
+        return Results.Ok(new { action = "none", reason = "No public release found." });
+
+    var maxAgeHours = Math.Clamp(cfg.GetValue("PushCheck:MaxReleaseAgeHours", 12), 1, 72);
+    var age = DateTimeOffset.UtcNow - latest.PublishedAt;
+
+    if (latest.PublishedAt != DateTimeOffset.MinValue &&
+        age > TimeSpan.FromHours(maxAgeHours))
+    {
+        return Results.Ok(new
+        {
+            action = "none",
+            reason = "Latest release is outside notification window.",
+            videoId = latest.Id,
+            publishedAt = latest.PublishedAt
+        });
+    }
+
+    if (await push.WasReleaseAlreadySentAsync(latest.Id, ct))
+    {
+        return Results.Ok(new
+        {
+            action = "none",
+            reason = "Release push already sent.",
+            videoId = latest.Id
+        });
+    }
+
+    var messageId = await push.SendReleaseAsync(latest, ct);
+
+    return Results.Ok(new
+    {
+        action = "sent",
+        videoId = latest.Id,
+        title = latest.Title,
+        messageId
+    });
 });
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));

@@ -1,0 +1,27 @@
+Don Miguel App v1.5.0 – Automatic Release Push
+
+RENDER ENVIRONMENT VARIABLES
+OneSignal__ApiKey = <new production OneSignal App API key>
+OneSignal__AppId = 2cf0f3d8-b077-4ea6-b56b-e15831c8c24d
+OneSignal__AppUrl = https://donmiguelapp.onrender.com
+PushCheck__Secret = <random secret, choose your own>
+PushCheck__MaxReleaseAgeHours = 12
+
+GITHUB ACTIONS SECRET
+Repository > Settings > Secrets and variables > Actions > New repository secret
+Name: PUSH_CHECK_SECRET
+Value: exactly the same value as Render PushCheck__Secret
+
+WORKFLOW
+.github/workflows/release-push.yml
+Runs every 15 minutes at minute 7, 22, 37, 52 and can also be triggered manually.
+
+DUPLICATE PROTECTION
+Each release push is named dmc-release-<YouTubeVideoId>.
+Before sending, the backend checks recent OneSignal API messages. If that release was
+already sent, no second push is generated.
+
+INITIAL BEHAVIOR
+Only releases published within PushCheck__MaxReleaseAgeHours are eligible.
+Default here is 12 hours, preventing very old releases from being pushed when the
+automation is first enabled.
