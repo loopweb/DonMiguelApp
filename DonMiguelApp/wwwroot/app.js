@@ -569,20 +569,6 @@ function setPushToggleUi(on,status){
   });
 }
 
-async function syncReleasePushTag(OneSignal){
-  if(!OneSignal)return;
-  try{
-    const optedIn=OneSignal.User.PushSubscription.optedIn === true;
-    if(optedIn){
-      await OneSignal.User.addTag('dmc_release_push','1');
-    }else{
-      await OneSignal.User.removeTag('dmc_release_push');
-    }
-  }catch(e){
-    console.warn('Could not sync release push tag',e);
-  }
-}
-
 function refreshPushToggleUi(){
   if(!oneSignalInstance){
     setPushToggleUi(false,'Push unavailable');
@@ -632,7 +618,6 @@ async function togglePushNotifications(){
 
     if(currentlyOptedIn){
       OneSignal.User.PushSubscription.optOut();
-      await OneSignal.User.removeTag('dmc_release_push');
       setTimeout(refreshPushToggleUi,150);
       return;
     }
@@ -643,7 +628,6 @@ async function togglePushNotifications(){
 
     if(OneSignal.Notifications.permission){
       OneSignal.User.PushSubscription.optIn();
-      setTimeout(()=>syncReleasePushTag(OneSignal),500);
     }
 
     setTimeout(refreshPushToggleUi,250);
@@ -666,12 +650,8 @@ function setupPushNotificationControls(){
     oneSignalInstance=OneSignal;
     oneSignalUiReady=true;
     refreshPushToggleUi();
-    syncReleasePushTag(OneSignal);
     try{
-      OneSignal.User.PushSubscription.addEventListener('change',()=>{
-        refreshPushToggleUi();
-        syncReleasePushTag(OneSignal);
-      });
+      OneSignal.User.PushSubscription.addEventListener('change',refreshPushToggleUi);
       OneSignal.Notifications.addEventListener('permissionChange',refreshPushToggleUi);
     }catch(e){console.warn('OneSignal listeners unavailable',e);}
   };

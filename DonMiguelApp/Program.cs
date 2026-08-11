@@ -159,7 +159,7 @@ app.MapPost("/api/push/check-release", async (
         return Results.Ok(new
         {
             action = "not-sent",
-            reason = "OneSignal did not accept the push.",
+            reason = "OneSignal did not confirm a deliverable push.",
             videoId = latest.Id,
             title = latest.Title,
             messageId = sendResult.MessageId,
@@ -175,10 +175,7 @@ app.MapPost("/api/push/check-release", async (
         videoId = latest.Id,
         title = latest.Title,
         messageId = sendResult.MessageId,
-        recipients = sendResult.Recipients,
-        note = sendResult.Recipients == 0
-            ? "OneSignal accepted the message; recipient count was not included in the create response."
-            : null
+        recipients = sendResult.Recipients
     });
 });
 

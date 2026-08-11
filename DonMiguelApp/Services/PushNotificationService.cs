@@ -56,22 +56,19 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
         {
             app_id = _appId,
             target_channel = "push",
-            filters = new object[]
-            {
-                new { field = "tag", key = "dmc_release_push", relation = "=", value = "1" }
-            },
+            included_segments = new[] { "Subscribed Users" },
             name = ReleaseMessageName(video.Id),
             headings = new
             {
-                en = "Don Miguel – New Release",
-                de = "Don Miguel – New Release",
-                es = "Don Miguel – New Release"
+                en = "New Latin Release",
+                de = "New Latin Release",
+                es = "New Latin Release"
             },
             contents = new
             {
-                en = $"{title} is now available.",
-                de = $"{title} ist jetzt verfügbar.",
-                es = $"{title} ya está disponible."
+                en = $"{title} – Listen now",
+                de = $"{title} – Listen now",
+                es = $"{title} – Listen now"
             },
             web_url = _appUrl,
             data = new
@@ -135,7 +132,7 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
             body);
 
         return new PushSendResult(
-            Success: !string.IsNullOrWhiteSpace(id) && errors.Length == 0,
+            Success: !string.IsNullOrWhiteSpace(id) && recipients > 0 && errors.Length == 0,
             MessageId: id,
             Recipients: recipients,
             Errors: errors,
@@ -154,7 +151,7 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
             throw new InvalidOperationException("OneSignal server API is not configured.");
     }
 
-    private static string ReleaseMessageName(string videoId) => $"dmc-release-tagged-{videoId}";
+    private static string ReleaseMessageName(string videoId) => $"dmc-release-{videoId}";
 
     private static string CleanTitle(string title)
     {
