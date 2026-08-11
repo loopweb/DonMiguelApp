@@ -56,7 +56,10 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
         {
             app_id = _appId,
             target_channel = "push",
-            included_segments = new[] { "Subscribed Users" },
+            filters = new object[]
+            {
+                new { field = "tag", key = "dmc_release_push", relation = "=", value = "1" }
+            },
             name = ReleaseMessageName(video.Id),
             headings = new
             {
@@ -151,7 +154,7 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
             throw new InvalidOperationException("OneSignal server API is not configured.");
     }
 
-    private static string ReleaseMessageName(string videoId) => $"dmc-release-{videoId}";
+    private static string ReleaseMessageName(string videoId) => $"dmc-release-tagged-{videoId}";
 
     private static string CleanTitle(string title)
     {
