@@ -1141,3 +1141,19 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
 .desktop-notification-links .desktop-push-toggle{margin-bottom:0}
 
 
+
+/* Unified overlay header close button */
+.menu-dialog .dialog-header .icon-button{
+  border-color:#b99a39;
+  outline:none;
+  box-shadow:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.menu-dialog .dialog-header .icon-button:hover,
+.menu-dialog .dialog-header .icon-button:focus,
+.menu-dialog .dialog-header .icon-button:focus-visible,
+.menu-dialog .dialog-header .icon-button:active{
+  border-color:#d8b84c;
+  outline:none;
+  box-shadow:none;
+}
