@@ -97,7 +97,7 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
 app.MapGet("/api/app-version", (HttpContext context) =>
 {
     context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-    return Results.Ok(new { version = "1.5.1" });
+    return Results.Ok(new { version = "1.5.2" });
 });
 
 
@@ -152,14 +152,30 @@ app.MapPost("/api/push/check-release", async (
         });
     }
 
-    var messageId = await push.SendReleaseAsync(latest, ct);
+    var sendResult = await push.SendReleaseAsync(latest, ct);
+
+    if (!sendResult.Success)
+    {
+        return Results.Ok(new
+        {
+            action = "not-sent",
+            reason = "OneSignal did not confirm a deliverable push.",
+            videoId = latest.Id,
+            title = latest.Title,
+            messageId = sendResult.MessageId,
+            recipients = sendResult.Recipients,
+            errors = sendResult.Errors,
+            oneSignalResponse = sendResult.RawResponse
+        });
+    }
 
     return Results.Ok(new
     {
         action = "sent",
         videoId = latest.Id,
         title = latest.Title,
-        messageId
+        messageId = sendResult.MessageId,
+        recipients = sendResult.Recipients
     });
 });
 

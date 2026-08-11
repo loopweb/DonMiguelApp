@@ -47,7 +47,7 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
         return false;
     }
 
-    public async Task<string?> SendReleaseAsync(VideoItem video, CancellationToken ct)
+    public async Task<PushSendResult> SendReleaseAsync(VideoItem video, CancellationToken ct)
     {
         EnsureConfigured();
 
@@ -95,8 +95,49 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
             throw new InvalidOperationException($"OneSignal push failed with HTTP {(int)response.StatusCode}.");
         }
 
-        using var doc = JsonDocument.Parse(body);
-        return doc.RootElement.TryGetProperty("id", out var id) ? id.GetString() : null;
+        string? id = null;
+        int recipients = 0;
+        string[] errors = Array.Empty<string>();
+
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+
+            if (doc.RootElement.TryGetProperty("id", out var idElement))
+                id = idElement.GetString();
+
+            if (doc.RootElement.TryGetProperty("recipients", out var recipientsElement) &&
+                recipientsElement.TryGetInt32(out var parsedRecipients))
+                recipients = parsedRecipients;
+
+            if (doc.RootElement.TryGetProperty("errors", out var errorsElement) &&
+                errorsElement.ValueKind == JsonValueKind.Array)
+            {
+                errors = errorsElement.EnumerateArray()
+                    .Select(x => x.ToString())
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .ToArray();
+            }
+        }
+        catch (JsonException ex)
+        {
+            logger.LogError(ex, "Could not parse OneSignal response body: {Body}", body);
+        }
+
+        logger.LogInformation(
+            "OneSignal push response: MessageId={MessageId}, Recipients={Recipients}, Errors={Errors}, RawBody={RawBody}",
+            id ?? "<none>",
+            recipients,
+            errors.Length == 0 ? "<none>" : string.Join(" | ", errors),
+            body);
+
+        return new PushSendResult(
+            Success: !string.IsNullOrWhiteSpace(id) && recipients > 0 && errors.Length == 0,
+            MessageId: id,
+            Recipients: recipients,
+            Errors: errors,
+            RawResponse: body
+        );
     }
 
     private void AddAuthorization(HttpRequestMessage request)
@@ -137,3 +178,12 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
         return clean;
     }
 }
+
+public sealed record PushSendResult(
+    bool Success,
+    string? MessageId,
+    int Recipients,
+    string[] Errors,
+    string RawResponse
+);
+
