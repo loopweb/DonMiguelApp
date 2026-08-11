@@ -97,7 +97,7 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
 app.MapGet("/api/app-version", (HttpContext context) =>
 {
     context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-    return Results.Ok(new { version = "1.5.3" });
+    return Results.Ok(new { version = "1.5.4" });
 });
 
 
@@ -159,7 +159,7 @@ app.MapPost("/api/push/check-release", async (
         return Results.Ok(new
         {
             action = "not-sent",
-            reason = "OneSignal did not confirm a deliverable push.",
+            reason = "OneSignal did not accept the push.",
             videoId = latest.Id,
             title = latest.Title,
             messageId = sendResult.MessageId,
@@ -175,7 +175,10 @@ app.MapPost("/api/push/check-release", async (
         videoId = latest.Id,
         title = latest.Title,
         messageId = sendResult.MessageId,
-        recipients = sendResult.Recipients
+        recipients = sendResult.Recipients,
+        note = sendResult.Recipients == 0
+            ? "OneSignal accepted the message; recipient count was not included in the create response."
+            : null
     });
 });
 

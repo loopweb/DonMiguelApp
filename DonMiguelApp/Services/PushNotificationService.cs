@@ -135,7 +135,7 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
             body);
 
         return new PushSendResult(
-            Success: !string.IsNullOrWhiteSpace(id) && recipients > 0 && errors.Length == 0,
+            Success: !string.IsNullOrWhiteSpace(id) && errors.Length == 0,
             MessageId: id,
             Recipients: recipients,
             Errors: errors,
