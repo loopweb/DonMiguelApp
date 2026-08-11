@@ -56,7 +56,14 @@ public sealed class PushNotificationService(HttpClient http, IConfiguration conf
         {
             app_id = _appId,
             target_channel = "push",
-            included_segments = new[] { "Subscribed Users" },
+            // Use a real-time audience filter instead of relying on the
+            // built-in "Subscribed Users" segment name. OneSignal still
+            // delivers push only to currently subscribed/reachable push
+            // subscriptions within the matching audience.
+            filters = new object[]
+            {
+                new { field = "session_count", relation = ">", value = "0" }
+            },
             name = ReleaseMessageName(video.Id),
             headings = new
             {
