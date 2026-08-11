@@ -25,10 +25,7 @@ The **software source code** is released under the MIT License. See `LICENSE`.
 The license does **not** cover Don Miguel / Don Miguel de Cabarete branding, music, recordings, artwork, photographs, videos, logos or other media. See `BRAND-ASSETS.md`.
 
 ## Security
-
-Do not commit API keys, passwords, or other secrets to this repository.
-
-Sensitive values used by the app are configured through protected environment variables and GitHub Actions secrets.
+Do not publish credentials in issues. If a credential is exposed, revoke/rotate it immediately. Before making a fork public, review its complete Git history for secrets.
 
 ## Live app
 https://donmiguelapp.onrender.com
