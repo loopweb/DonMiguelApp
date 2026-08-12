@@ -1228,3 +1228,15 @@ textarea:focus-visible {
 :focus-visible {
   outline-color: var(--gold);
 }
+
+
+/* v1.6.6 — prevent Chromium/Edge from drawing a blue focus ring
+   around the complete Now Playing dialog */
+#nowPlayingDialog:focus,
+#nowPlayingDialog:focus-visible,
+.now-playing-dialog:focus,
+.now-playing-dialog:focus-visible {
+  outline: none !important;
+  border-color: #4b4130 !important;
+  box-shadow: none !important;
+}
