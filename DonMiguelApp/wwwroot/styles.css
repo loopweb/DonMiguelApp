@@ -1183,3 +1183,48 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
   padding-left:12px;
   opacity:.9;
 }
+
+
+/* v1.6.5 — consistent focus style, no browser-default blue outlines */
+button,
+a,
+[role="button"],
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus,
+button:focus-visible,
+a:focus,
+a:focus-visible,
+[role="button"]:focus,
+[role="button"]:focus-visible,
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 1px rgba(212,166,55,.28) !important;
+}
+
+.icon-button:focus,
+.icon-button:focus-visible,
+.unified-close-button:focus,
+.unified-close-button:focus-visible,
+.mini-control:focus,
+.mini-control:focus-visible,
+.player-control:focus,
+.player-control:focus-visible {
+  outline: none !important;
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 1px rgba(212,166,55,.28) !important;
+}
+
+/* Prevent Chromium/Edge focus indication from painting a blue border on embedded controls. */
+:focus-visible {
+  outline-color: var(--gold);
+}
