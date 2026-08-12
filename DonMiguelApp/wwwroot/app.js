@@ -691,3 +691,39 @@ window.addEventListener('focus',()=>{
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible')setTimeout(refreshLatestRelease,250);
 });
+
+
+function setupLegalDialogs(){
+  const menu=$('#menuDialog');
+  const imprint=$('#imprintDialog');
+  const privacy=$('#privacyDialog');
+  const closeImprint=$('#closeImprint');
+  const closePrivacy=$('#closePrivacy');
+
+  function openLegal(which,e){
+    if(e)e.preventDefault();
+    const dialog=which==='imprint'?imprint:privacy;
+    if(!dialog)return;
+    if(menu?.open)menu.close();
+    dialog.showModal();
+    const scroller=dialog.querySelector('.links-content');
+    if(scroller)scroller.scrollTop=0;
+  }
+
+  document.querySelectorAll('[data-open-legal="imprint"]').forEach(a=>{
+    a.addEventListener('click',e=>openLegal('imprint',e));
+  });
+  document.querySelectorAll('[data-open-legal="privacy"]').forEach(a=>{
+    a.addEventListener('click',e=>openLegal('privacy',e));
+  });
+
+  closeImprint?.addEventListener('click',()=>imprint?.close());
+  closePrivacy?.addEventListener('click',()=>privacy?.close());
+
+  [imprint,privacy].forEach(dialog=>{
+    dialog?.addEventListener('click',e=>{
+      if(e.target===dialog)dialog.close();
+    });
+  });
+}
+window.addEventListener('load',setupLegalDialogs);

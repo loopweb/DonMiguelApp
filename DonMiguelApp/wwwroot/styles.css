@@ -1141,3 +1141,45 @@ body.is-loading{overflow:hidden}.app-preloader{position:fixed;inset:0;z-index:99
 .desktop-notification-links .desktop-push-toggle{margin-bottom:0}
 
 
+
+
+/* v1.6.3 — Links / Legal Notice / Privacy use the same header + close control */
+.unified-close-button{
+  width:40px;
+  height:40px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--gold);
+  border-radius:7px;
+  background:#0a0a0a;
+  color:#fff;
+  font-size:1.55rem;
+  line-height:1;
+  outline:none;
+  box-shadow:none;
+}
+.unified-close-button:focus,
+.unified-close-button:focus-visible{
+  outline:none;
+  border-color:var(--gold);
+  box-shadow:0 0 0 1px rgba(212,166,55,.22);
+}
+.legal-dialog-content{
+  line-height:1.62;
+  padding-top:16px;
+}
+.legal-dialog-content h2{
+  margin:26px 0 8px;
+  color:var(--gold);
+  font-size:1.08rem;
+}
+.legal-dialog-content h2:first-child{margin-top:0}
+.legal-dialog-content p{margin:0 0 14px}
+.legal-dialog-content a{color:#e0c56b}
+.legal-dialog-content .updated{opacity:.65}
+.legal-dialog-content .note{
+  border-left:3px solid var(--gold);
+  padding-left:12px;
+  opacity:.9;
+}
