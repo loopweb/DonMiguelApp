@@ -42,7 +42,7 @@ const linkGroups={
     ['Spotify','https://open.spotify.com/artist/1ZumwPc08JV7exhNFM63EX','spotify.svg'],
     ['Apple Music','https://music.apple.com/de/artist/don-miguel-de-cabarete/1819273199','applemusic.svg'],
     ['Amazon Music','https://music.amazon.com/artists/B0FBLTZGWF/don-miguel-de-cabarete','amazonmusic.svg'],
-    ['YouTube Music','https://music.youtube.com/search?q=Don%20Miguel%20de%20Cabarete','youtubemusic.svg'],
+    ['YouTube Music','https://music.youtube.com/@migflow','youtubemusic.svg'],
     ['laut.fm','https://laut.fm/don-miguel','laut.svg'],
     ['YouTube','https://www.youtube.com/@migflow','youtube.svg']
   ],
