@@ -1275,3 +1275,28 @@ textarea:focus-visible {
   outline:none !important;
   box-shadow:0 0 0 1px rgba(212,166,55,.28) !important;
 }
+
+
+/* v1.6.7 correction — restore framed scroll areas for Legal Notice + Privacy */
+#imprintDialog,
+#privacyDialog{
+  overflow:hidden !important;
+}
+
+#imprintDialog .legal-dialog-content,
+#privacyDialog .legal-dialog-content{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+  margin:0 12px 12px !important;
+  padding:16px !important;
+  border:1px solid #4b4130 !important;
+  border-radius:16px !important;
+  background:#070707 !important;
+}
+
+#imprintDialog .dialog-header,
+#privacyDialog .dialog-header{
+  flex:0 0 auto !important;
+}
