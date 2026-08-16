@@ -1240,3 +1240,56 @@ textarea:focus-visible {
   border-color: #4b4130 !important;
   box-shadow: none !important;
 }
+
+
+/* v1.6.7 — compact player identity + YouTube actions */
+.now-playing-content h1{font-size:1.28rem!important;line-height:1.25;margin-bottom:5px}
+.artist{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.subscriber-count{color:#8f8f8f;font-size:.72rem;font-weight:500;white-space:nowrap}
+.youtube-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+.youtube-action-button{min-width:0;padding:8px 6px!important;font-size:.78rem!important;white-space:nowrap}
+.subscribe-action{color:var(--gold)}
+@media(max-width:360px){.youtube-action-button{font-size:.72rem!important;padding:8px 4px!important}.subscriber-count{font-size:.68rem}}
+
+
+/* v1.6.7 — unify playback controls without changing the UI hierarchy */
+.mini-player .play-button,
+.mini-player .mini-play,
+#miniPlay,
+#playPause {
+  border:1px solid var(--gold) !important;
+  background:#0a0a0a !important;
+  color:#fff !important;
+  box-shadow:none !important;
+}
+
+.mini-player .play-button:hover,
+.mini-player .mini-play:hover,
+#miniPlay:hover,
+#playPause:hover {
+  background:rgba(212,166,55,.10) !important;
+}
+
+.mini-player .play-button:active,
+.mini-player .mini-play:active,
+#miniPlay:active,
+#playPause:active {
+  transform:scale(.96);
+}
+
+#miniPrev,
+#miniNext,
+#prevButton,
+#nextButton {
+  border-color:#4b4130 !important;
+  background:#0a0a0a !important;
+  color:#f4f4f4 !important;
+}
+
+#miniPrev:hover,
+#miniNext:hover,
+#prevButton:hover,
+#nextButton:hover {
+  border-color:var(--gold) !important;
+  background:rgba(212,166,55,.08) !important;
+}

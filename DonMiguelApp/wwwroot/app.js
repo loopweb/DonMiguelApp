@@ -34,7 +34,7 @@ const els={
   genres:$('#genreBar'),search:$('#searchInput'),mini:$('#miniPlayer'),
   miniPlay:$('#playPauseButton'),dialogPlay:$('#dialogPlayPauseButton'),
   nowDialog:$('#nowPlayingDialog'),nowTitle:$('#nowTitle'),nowMeta:$('#nowMeta'),comments:$('#comments'),
-  commentCount:$('#commentCount'),menu:$('#menuDialog')
+  commentCount:$('#commentCount'),subscriberCount:$('#subscriberCount'),menu:$('#menuDialog')
 };
 
 const linkGroups={
@@ -123,10 +123,14 @@ async function load(){
   try{
     const status=await fetch('/api/status').then(check);
     if(!status.configured)throw new Error('YouTube API key is not configured.');
-    const [allTracks, channelUploads]=await Promise.all([
+    const [allTracks, channelUploads, channelInfo]=await Promise.all([
       fetchPlaylist('All'),
-      fetch(`/api/youtube/latest?_=${Date.now()}`,{cache:'no-store'}).then(check)
+      fetch(`/api/youtube/latest?_=${Date.now()}`,{cache:'no-store'}).then(check),
+      fetch(`/api/youtube/channel?_=${Date.now()}`,{cache:'no-store'}).then(check)
     ]);
+    if(els.subscriberCount && channelInfo?.subscriberCount){
+      els.subscriberCount.textContent=`· ${formatSubscribers(channelInfo.subscriberCount)} subscribers`;
+    }
     state.videos=allTracks;
     state.latestVideo=channelUploads||state.videos[0]||null;
     state.selectedId=state.latestVideo?.id||state.videos[0]?.id||null;
@@ -149,6 +153,13 @@ function displayTitle(title){
   return String(title||'')
     .replace(/\s*[–—-]\s*Don Miguel de Cabarete(?:\s*[|–—-]\s*.*)?$/i,'')
     .trim();
+}
+
+function formatSubscribers(value){
+  const n=Number(value)||0;
+  if(n>=1000000)return `${(n/1000000).toFixed(n>=10000000?0:1).replace('.0','')}M`;
+  if(n>=1000)return `${(n/1000).toFixed(n>=100000?0:1).replace('.0','')}K`;
+  return String(n);
 }
 
 
@@ -344,7 +355,7 @@ function selectTrack(id,open,shouldPlay=true){
   state.pendingVideoId=id;
   state.pendingPlay=!!shouldPlay;
   els.mini.classList.remove('hidden');
-  els.nowTitle.textContent=v.title;
+  els.nowTitle.textContent=displayTitle(v.title);
   els.nowMeta.textContent=`◉ ${views(v.viewCount)} Views · ${relativeDate(v.publishedAt)}`;
   renderList();
   if(state.playerReady){
@@ -444,6 +455,7 @@ function openCurrentVideoOnYouTube(showComments=false){
 }
 $('#youtubeLikeButton').onclick=()=>openCurrentVideoOnYouTube(false);
 $('#youtubeCommentButton').onclick=()=>openCurrentVideoOnYouTube(true);
+$('#youtubeSubscribeButton').onclick=()=>window.open('https://www.youtube.com/@migflow?sub_confirmation=1','_blank','noopener');
 
 $('#musicLinks').innerHTML=linkGroups.music.map(([name,url,icon])=>`<a class="service-tile" href="${url}" target="_blank" rel="noopener"><span class="brand-icon-shell"><img class="service-logo" src="/assets/icons/${icon}" alt="${esc(name)}"></span><strong>${esc(name)}</strong></a>`).join('');
 $('#officialLinks').innerHTML=linkGroups.official.map(([name,url,sub,icon])=>`<a class="official-row" href="${url}" target="_blank" rel="noopener"><img class="official-logo" src="/assets/icons/${icon}" alt=""><span><strong>${esc(name)}</strong><small>${esc(sub)}</small></span><b>›</b></a>`).join('');

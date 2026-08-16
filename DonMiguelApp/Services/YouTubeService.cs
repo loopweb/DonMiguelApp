@@ -16,7 +16,7 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
     public async Task<ChannelInfo?> GetChannelAsync(CancellationToken ct)
     {
         EnsureConfigured();
-        var url = $"https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&forHandle={Uri.EscapeDataString(_handle)}&key={Uri.EscapeDataString(_apiKey)}";
+        var url = $"https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&forHandle={Uri.EscapeDataString(_handle)}&key={Uri.EscapeDataString(_apiKey)}";
         using var doc = await GetJsonAsync(url, ct);
         var item = doc.RootElement.GetProperty("items").EnumerateArray().FirstOrDefault();
         if (item.ValueKind == JsonValueKind.Undefined) return null;
@@ -28,7 +28,10 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
             snippet.GetProperty("title").GetString() ?? "Don Miguel de Cabarete",
             snippet.TryGetProperty("description", out var d) ? d.GetString() ?? "" : "",
             BestThumbnail(snippet.GetProperty("thumbnails")),
-            uploads);
+            uploads,
+            item.TryGetProperty("statistics", out var stats) &&
+            stats.TryGetProperty("subscriberCount", out var subs) &&
+            long.TryParse(subs.GetString(), out var subscriberCount) ? subscriberCount : 0);
     }
 
 

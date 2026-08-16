@@ -22,7 +22,8 @@ public sealed record ChannelInfo(
     string Title,
     string Description,
     string Thumbnail,
-    string UploadsPlaylistId);
+    string UploadsPlaylistId,
+    long SubscriberCount);
 
 public sealed record CommentItem(
     string Id,
