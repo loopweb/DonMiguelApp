@@ -1311,3 +1311,34 @@ textarea:focus-visible {
     column-gap:10px !important;
   }
 }
+
+
+/* v1.6.7 — real mini-player spacing fix.
+   Previous/Play/Next are direct grid children, so use dedicated spacer columns. */
+.mini-player{
+  grid-template-columns:44px 1fr 44px 14px 64px 14px 44px 1fr 44px !important;
+  gap:0 !important;
+}
+
+.mini-player #openNowPlaying{
+  grid-column:1 !important;
+}
+.mini-player #previousButton{
+  grid-column:3 !important;
+}
+.mini-player #playPauseButton{
+  grid-column:5 !important;
+}
+.mini-player #nextButton{
+  grid-column:7 !important;
+}
+.mini-player #queueButton{
+  grid-column:9 !important;
+}
+
+@media(max-width:420px){
+  .mini-player{
+    grid-template-columns:40px 1fr 38px 10px 58px 10px 38px 1fr 40px !important;
+    gap:0 !important;
+  }
+}
