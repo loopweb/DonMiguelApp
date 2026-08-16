@@ -128,6 +128,7 @@ async function load(){
       fetch(`/api/youtube/latest?_=${Date.now()}`,{cache:'no-store'}).then(check),
       fetch(`/api/youtube/channel?_=${Date.now()}`,{cache:'no-store'}).then(check)
     ]);
+    state.subscriberCount=Number(channelInfo?.subscriberCount)||0;
     state.videos=allTracks;
     state.latestVideo=channelUploads||state.videos[0]||null;
     state.selectedId=state.latestVideo?.id||state.videos[0]?.id||null;
@@ -353,7 +354,9 @@ function selectTrack(id,open,shouldPlay=true){
   state.pendingPlay=!!shouldPlay;
   els.mini.classList.remove('hidden');
   els.nowTitle.textContent=displayTitle(v.title);
-  els.nowMeta.textContent=(state.subscriberCount?`${formatSubscribers(state.subscriberCount)} subscribers · `:'')+(`◉ ${views(v.viewCount)} Views · ${relativeDate(v.publishedAt)}`);
+  els.nowMeta.textContent=
+    `${state.subscriberCount ? `${formatSubscribers(state.subscriberCount)} subscribers · ` : ''}` +
+    `◉ ${views(v.viewCount)} Views · ${relativeDate(v.publishedAt)}`;
   renderList();
   if(state.playerReady){
     if(shouldPlay)state.player.loadVideoById(id);
