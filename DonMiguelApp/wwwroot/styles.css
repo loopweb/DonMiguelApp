@@ -1300,3 +1300,14 @@ textarea:focus-visible {
 #privacyDialog .dialog-header{
   flex:0 0 auto !important;
 }
+
+
+/* v1.6.7 — slightly more breathing room around mini-player Play/Pause */
+.mini-controls{
+  column-gap:14px !important;
+}
+@media (max-width:380px){
+  .mini-controls{
+    column-gap:10px !important;
+  }
+}
