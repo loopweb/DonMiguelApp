@@ -44,40 +44,58 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
         var url = $"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId={Uri.EscapeDataString(channel.UploadsPlaylistId)}&maxResults=10&key={Uri.EscapeDataString(_apiKey)}";
         using var page = await GetJsonAsync(url, ct);
 
-        var item = page.RootElement.GetProperty("items").EnumerateArray()
-            .FirstOrDefault(x =>
+        var candidates = page.RootElement.GetProperty("items").EnumerateArray()
+            .Where(x =>
             {
-                if (!x.TryGetProperty("snippet", out var s)) return false;
-                var title = s.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
+                if (!x.TryGetProperty("snippet", out var snippet)) return false;
+                var title = snippet.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
                 return !title.Equals("Private video", StringComparison.OrdinalIgnoreCase)
                     && !title.Equals("Deleted video", StringComparison.OrdinalIgnoreCase)
                     && x.TryGetProperty("contentDetails", out var cd)
                     && cd.TryGetProperty("videoId", out var vid)
                     && !string.IsNullOrWhiteSpace(vid.GetString());
-            });
+            })
+            .Select(x => x.Clone())
+            .ToArray();
 
-        if (item.ValueKind == JsonValueKind.Undefined) return null;
+        if (candidates.Length == 0) return null;
 
-        var snippet = item.GetProperty("snippet");
-        var id = item.GetProperty("contentDetails").GetProperty("videoId").GetString() ?? "";
-        if (string.IsNullOrWhiteSpace(id)) return null;
+        var ids = candidates
+            .Select(x => x.GetProperty("contentDetails").GetProperty("videoId").GetString() ?? "")
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToArray();
+        var detailsMap = await GetVideoDetailsAsync(ids, ct);
 
-        var detailsMap = await GetVideoDetailsAsync(new[] { id }, ct);
-        var details = detailsMap.GetValueOrDefault(id, new VideoDetails("", 0));
-        var published = snippet.TryGetProperty("publishedAt", out var p) &&
-                        DateTimeOffset.TryParse(p.GetString(), out var dt)
-            ? dt
-            : DateTimeOffset.MinValue;
+        foreach (var item in candidates)
+        {
+            var snippet = item.GetProperty("snippet");
+            var id = item.GetProperty("contentDetails").GetProperty("videoId").GetString() ?? "";
+            if (string.IsNullOrWhiteSpace(id)) continue;
 
-        return new VideoItem(
-            id,
-            snippet.GetProperty("title").GetString() ?? "",
-            snippet.TryGetProperty("description", out var desc) ? desc.GetString() ?? "" : "",
-            BestThumbnail(snippet.GetProperty("thumbnails")),
-            published,
-            details.Duration,
-            snippet.TryGetProperty("channelTitle", out var c) ? c.GetString() ?? channel.Title : channel.Title,
-            details.ViewCount);
+            var details = detailsMap.GetValueOrDefault(id, new VideoDetails("", 0, 0));
+            if (await IsYouTubeShortAsync(id, details.DurationSeconds, ct))
+            {
+                logger.LogInformation("Ignoring YouTube Short {VideoId} while resolving latest release.", id);
+                continue;
+            }
+
+            var published = snippet.TryGetProperty("publishedAt", out var p) &&
+                            DateTimeOffset.TryParse(p.GetString(), out var dt)
+                ? dt
+                : DateTimeOffset.MinValue;
+
+            return new VideoItem(
+                id,
+                snippet.GetProperty("title").GetString() ?? "",
+                snippet.TryGetProperty("description", out var desc) ? desc.GetString() ?? "" : "",
+                BestThumbnail(snippet.GetProperty("thumbnails")),
+                published,
+                details.Duration,
+                snippet.TryGetProperty("channelTitle", out var c) ? c.GetString() ?? channel.Title : channel.Title,
+                details.ViewCount);
+        }
+
+        return null;
     }
 
     public async Task<IReadOnlyList<VideoItem>> GetVideosAsync(CancellationToken ct)
@@ -117,12 +135,12 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
         var ids = uniqueRaw.Select(x => x.GetProperty("contentDetails").GetProperty("videoId").GetString()!).ToArray();
         var detailsMap = await GetVideoDetailsAsync(ids, ct);
 
-        return uniqueRaw.Select(x =>
+        var videos = uniqueRaw.Select(x =>
         {
             var snippet = x.GetProperty("snippet");
             var id = x.GetProperty("contentDetails").GetProperty("videoId").GetString() ?? "";
             var published = snippet.TryGetProperty("publishedAt", out var p) && DateTimeOffset.TryParse(p.GetString(), out var dt) ? dt : DateTimeOffset.MinValue;
-            var details = detailsMap.GetValueOrDefault(id, new VideoDetails("", 0));
+            var details = detailsMap.GetValueOrDefault(id, new VideoDetails("", 0, 0));
             return new VideoItem(
                 id,
                 snippet.GetProperty("title").GetString() ?? "",
@@ -133,6 +151,8 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
                 snippet.TryGetProperty("channelTitle", out var c) ? c.GetString() ?? channel.Title : channel.Title,
                 details.ViewCount);
         }).OrderByDescending(x => x.PublishedAt).ToArray();
+
+        return await RemoveYouTubeShortsAsync(videos, detailsMap, ct);
     }
 
 
@@ -172,12 +192,12 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
         var ids = uniqueRaw.Select(x => x.GetProperty("contentDetails").GetProperty("videoId").GetString()!).ToArray();
         var detailsMap = await GetVideoDetailsAsync(ids, ct);
 
-        return uniqueRaw.Select(x =>
+        var videos = uniqueRaw.Select(x =>
         {
             var snippet = x.GetProperty("snippet");
             var id = x.GetProperty("contentDetails").GetProperty("videoId").GetString() ?? "";
             var published = snippet.TryGetProperty("publishedAt", out var p) && DateTimeOffset.TryParse(p.GetString(), out var dt) ? dt : DateTimeOffset.MinValue;
-            var details = detailsMap.GetValueOrDefault(id, new VideoDetails("", 0));
+            var details = detailsMap.GetValueOrDefault(id, new VideoDetails("", 0, 0));
             return new VideoItem(
                 id,
                 snippet.GetProperty("title").GetString() ?? "",
@@ -188,6 +208,8 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
                 snippet.TryGetProperty("channelTitle", out var c) ? c.GetString() ?? "Don Miguel de Cabarete" : "Don Miguel de Cabarete",
                 details.ViewCount);
         }).ToArray();
+
+        return await RemoveYouTubeShortsAsync(videos, detailsMap, ct);
     }
 
     public async Task<IReadOnlyList<PlaylistItem>> GetPlaylistsAsync(CancellationToken ct)
@@ -249,10 +271,62 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
                 var id = item.GetProperty("id").GetString() ?? "";
                 var iso = item.GetProperty("contentDetails").GetProperty("duration").GetString() ?? "";
                 var views = item.TryGetProperty("statistics", out var stats) && stats.TryGetProperty("viewCount", out var viewCount) && long.TryParse(viewCount.GetString(), out var parsed) ? parsed : 0;
-                result[id] = new VideoDetails(FormatDuration(iso), views);
+                var durationSeconds = ParseDurationSeconds(iso);
+                result[id] = new VideoDetails(FormatDuration(iso), views, durationSeconds);
             }
         }
         return result;
+    }
+
+    private async Task<IReadOnlyList<VideoItem>> RemoveYouTubeShortsAsync(
+        IReadOnlyList<VideoItem> videos,
+        IReadOnlyDictionary<string, VideoDetails> detailsMap,
+        CancellationToken ct)
+    {
+        var filtered = new List<VideoItem>(videos.Count);
+        foreach (var video in videos)
+        {
+            var details = detailsMap.GetValueOrDefault(video.Id, new VideoDetails(video.Duration, video.ViewCount, 0));
+            if (await IsYouTubeShortAsync(video.Id, details.DurationSeconds, ct))
+            {
+                logger.LogInformation("Ignoring YouTube Short {VideoId}: {Title}", video.Id, video.Title);
+                continue;
+            }
+            filtered.Add(video);
+        }
+        return filtered;
+    }
+
+    private async Task<bool> IsYouTubeShortAsync(string videoId, double durationSeconds, CancellationToken ct)
+    {
+        // YouTube's public Data API has no Shorts flag. Shorts can currently be up to
+        // two minutes long, so only those videos need the additional URL check.
+        // This avoids incorrectly excluding ordinary short music videos by duration alone.
+        if (string.IsNullOrWhiteSpace(videoId) || durationSeconds <= 0 || durationSeconds > 120)
+            return false;
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get,
+                $"https://www.youtube.com/shorts/{Uri.EscapeDataString(videoId)}");
+            using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+            var finalUri = response.RequestMessage?.RequestUri;
+            return finalUri is not null &&
+                   finalUri.AbsolutePath.StartsWith("/shorts/", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            // Fail open: if YouTube cannot be checked, keep the video rather than
+            // accidentally hiding a normal music release.
+            logger.LogWarning(ex, "Could not determine whether YouTube video {VideoId} is a Short.", videoId);
+            return false;
+        }
+    }
+
+    private static double ParseDurationSeconds(string iso)
+    {
+        try { return XmlConvert.ToTimeSpan(iso).TotalSeconds; }
+        catch { return 0; }
     }
 
     private async Task<JsonDocument> GetJsonAsync(string url, CancellationToken ct)
@@ -290,5 +364,5 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
         catch { return ""; }
     }
 
-    private sealed record VideoDetails(string Duration, long ViewCount);
+    private sealed record VideoDetails(string Duration, long ViewCount, double DurationSeconds);
 }
