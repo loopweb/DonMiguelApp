@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no" class="notranslate">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="google" content="notranslate">
   <meta name="theme-color" content="#050505">
   <meta name="description" content="Official app of Don Miguel de Cabarete">
   <link rel="stylesheet" href="/styles.css">
@@ -125,7 +126,7 @@ console.error('OneSignal init failed', error);
             <span>Privacy Policy</span><b>›</b>
           </a>
           <div>
-            <span>App Version</span><small>1.6.9</small>
+            <span>App Version</span><small>1.6.10</small>
           </div>
         </div>
       </section>
@@ -165,8 +166,9 @@ console.error('OneSignal init failed', error);
       <strong>Now Playing</strong>
       <button id="playerMenuButton" class="icon-button" aria-label="Open menu">☰</button>
     </div>
-    <div class="video-stage"><div id="youtubePlayer"></div></div>
-    <section class="now-playing-content">
+    <div class="player-scroll-frame">
+      <div class="video-stage"><div id="youtubePlayer"></div></div>
+      <section class="now-playing-content">
       <h1 id="nowTitle"></h1>
       <p class="artist">Don Miguel de Cabarete</p>
       <p id="nowMeta" class="muted"></p>
@@ -184,7 +186,8 @@ console.error('OneSignal init failed', error);
       </div>
       <div class="comments-head"><h2>Comments</h2><span id="commentCount"></span></div>
       <div id="comments" class="comments"><p class="muted">Loading comments …</p></div>
-    </section>
+      </section>
+    </div>
   </dialog>
 
   <dialog id="menuDialog" class="menu-dialog">
@@ -222,7 +225,7 @@ console.error('OneSignal init failed', error);
         <div class="info-links">
           <a href="#legal-notice" data-open-legal="imprint"><span>Legal Notice</span><b>›</b></a>
           <a href="#privacy-policy" data-open-legal="privacy"><span>Privacy Policy</span><b>›</b></a>
-          <div><span>App Version</span><small>1.6.9</small></div>
+          <div><span>App Version</span><small>1.6.10</small></div>
         </div>
       </section>
     </div>
