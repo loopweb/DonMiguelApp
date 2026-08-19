@@ -494,7 +494,12 @@ function minimizeFullPlayer(){
   els.nowDialog.classList.add('player-minimized');
 }
 $('#openNowPlaying').onclick=openFullPlayer;
-$('#queueButton').onclick=()=>{els.list.scrollIntoView({behavior:'smooth',block:'start'});};
+$('#queueButton').onclick=()=>{
+  const target=document.getElementById('catalogStart');
+  if(!target)return;
+  const top=target.getBoundingClientRect().top + window.scrollY - 8;
+  window.scrollTo({top:Math.max(0,top),behavior:'smooth'});
+};
 $('#closeNowPlaying').onclick=minimizeFullPlayer;
 $('#previousButton').onclick=$('#dialogPreviousButton').onclick=()=>step(-1);
 $('#nextButton').onclick=$('#dialogNextButton').onclick=()=>step(1);
