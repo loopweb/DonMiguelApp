@@ -391,14 +391,33 @@ async function loadComments(id){
   }catch{els.comments.innerHTML='<p class="muted">Comments could not be loaded.</p>';}
 }
 
-window.onYouTubeIframeAPIReady=()=>{
-  // Keep the iframe alive even while the large player is minimized. iOS can
-  // suspend media inside a closed <dialog>, which made playback intermittent.
+function initYouTubeIframePlayer(){
+  if(state.player || state.playerInitStarted)return;
+  if(!(window.YT && YT.Player))return;
+
+  state.playerInitStarted=true;
+
+  // Keep the iframe alive even while the full player is minimized.
+  // The minimized container remains off-screen but now keeps a valid
+  // YouTube player viewport instead of shrinking the iframe to 2×2 px.
   if(!els.nowDialog.open)els.nowDialog.show();
   els.nowDialog.classList.add('player-minimized');
+
   state.player=new YT.Player('youtubePlayer',{
-    height:'100%',width:'100%',videoId:state.selectedId||'',
-    playerVars:{playsinline:1,rel:0,autoplay:0,controls:0,disablekb:1,fs:0,iv_load_policy:3,cc_load_policy:0},
+    height:'100%',
+    width:'100%',
+    videoId:state.selectedId||'',
+    playerVars:{
+      playsinline:1,
+      rel:0,
+      autoplay:0,
+      controls:0,
+      disablekb:1,
+      fs:0,
+      iv_load_policy:3,
+      cc_load_policy:0,
+      origin:window.location.origin
+    },
     events:{
       onReady:()=>{
         state.playerReady=true;
@@ -410,14 +429,50 @@ window.onYouTubeIframeAPIReady=()=>{
       },
       onStateChange:e=>{
         state.playing=e.data===YT.PlayerState.PLAYING;
-        if(state.playing){state.pendingPlay=false;state.pendingVideoId=null;}
+        if(state.playing){
+          state.pendingPlay=false;
+          state.pendingVideoId=null;
+        }
         syncPlayIcons();
-        if(e.data===YT.PlayerState.ENDED){if(state.repeat)state.player.playVideo();else step(1);}
+        if(e.data===YT.PlayerState.ENDED){
+          if(state.repeat)state.player.playVideo();
+          else step(1);
+        }
       },
-      onError:()=>{state.playing=false;state.pendingPlay=false;syncPlayIcons();}
+      onError:e=>{
+        console.warn('YouTube player error',e?.data);
+        state.playing=false;
+        state.pendingPlay=false;
+        syncPlayIcons();
+      }
     }
   });
-};
+}
+
+window.onYouTubeIframeAPIReady=initYouTubeIframePlayer;
+
+function loadYouTubeIframeApi(){
+  // If the API is already present (for example after a browser/PWA restore),
+  // initialize immediately.
+  if(window.YT && YT.Player){
+    initYouTubeIframePlayer();
+    return;
+  }
+
+  // Never inject the API twice.
+  if(document.querySelector('script[data-dmc-youtube-api]'))return;
+
+  const tag=document.createElement('script');
+  tag.src='https://www.youtube.com/iframe_api';
+  tag.async=true;
+  tag.dataset.dmcYoutubeApi='1';
+  tag.onerror=()=>{
+    console.error('YouTube IFrame API could not be loaded.');
+  };
+  document.head.appendChild(tag);
+}
+
+loadYouTubeIframeApi();
 
 els.search.oninput=e=>{state.query=e.target.value;applyFilters();};
 $('#menuButton').onclick=()=>els.menu.showModal();

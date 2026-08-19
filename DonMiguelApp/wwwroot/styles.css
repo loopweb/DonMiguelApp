@@ -1342,3 +1342,40 @@ textarea:focus-visible {
     gap:0 !important;
   }
 }
+
+
+/* v1.6.9 — Android/Chrome YouTube player compatibility.
+   Keep the minimized iframe off-screen, but never shrink the actual
+   YouTube player viewport to 2×2 px. */
+.now-playing-dialog.player-minimized{
+  left:-420px !important;
+  top:-260px !important;
+  width:356px !important;
+  height:200px !important;
+  min-width:356px !important;
+  min-height:200px !important;
+  max-width:356px !important;
+  max-height:200px !important;
+  opacity:.001 !important;
+  overflow:hidden !important;
+  pointer-events:none !important;
+  z-index:-1 !important;
+}
+
+.now-playing-dialog.player-minimized .video-stage{
+  display:block !important;
+  width:356px !important;
+  height:200px !important;
+  min-width:356px !important;
+  min-height:200px !important;
+  overflow:hidden !important;
+}
+
+.now-playing-dialog.player-minimized #youtubePlayer,
+.now-playing-dialog.player-minimized #youtubePlayer iframe{
+  display:block !important;
+  width:356px !important;
+  height:200px !important;
+  min-width:356px !important;
+  min-height:200px !important;
+}
