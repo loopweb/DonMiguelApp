@@ -495,9 +495,11 @@ function minimizeFullPlayer(){
 }
 $('#openNowPlaying').onclick=openFullPlayer;
 $('#queueButton').onclick=()=>{
-  const target=document.getElementById('catalogStart');
+  const target=document.getElementById('searchInput');
   if(!target)return;
-  const top=target.getBoundingClientRect().top + window.scrollY - 8;
+  const header=document.querySelector('.topbar');
+  const headerHeight=header ? header.getBoundingClientRect().height : 0;
+  const top=target.getBoundingClientRect().top + window.scrollY - headerHeight - 16;
   window.scrollTo({top:Math.max(0,top),behavior:'smooth'});
 };
 $('#closeNowPlaying').onclick=minimizeFullPlayer;
