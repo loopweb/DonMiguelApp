@@ -1,5 +1,7 @@
 # Don Miguel App
 
+Last maintenance update: 2026-10-11
+
 Open-source Progressive Web App for the independent music project **Don Miguel de Cabarete**.
 
 ## Features
