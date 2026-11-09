@@ -804,6 +804,35 @@ function setupLegalDialogs(){
 window.addEventListener('load',setupLegalDialogs);
 
 
+// Safely turn visible URLs in YouTube post text into clickable links.
+// Everything else remains a text node (no untrusted HTML injection).
+function renderCommunityNewsText(element, value){
+  element.replaceChildren();
+  const raw=String(value || '');
+  const urlPattern=/(https?:\/\/[^\s<>\"\'\u201c\u201d]+|www\.[^\s<>\"\'\u201c\u201d]+)/gi;
+  let last=0;
+  for(const match of raw.matchAll(urlPattern)){
+    const start=match.index;
+    if(start>last)element.append(document.createTextNode(raw.slice(last,start)));
+    const candidate=match[0];
+    const trimmed=candidate.replace(/[.,!?;:)}\]\u00bb]+$/g,'');
+    const suffix=candidate.slice(trimmed.length);
+    try{
+      const url=new URL(trimmed.startsWith('www.')?'https://'+trimmed:trimmed);
+      if(url.protocol!=='https:' && url.protocol!=='http:')throw new Error('Unsupported URL scheme');
+      const anchor=document.createElement('a');
+      anchor.href=url.href;
+      anchor.target='_blank';
+      anchor.rel='noopener noreferrer';
+      anchor.textContent=trimmed;
+      element.append(anchor);
+    }catch{element.append(document.createTextNode(trimmed));}
+    if(suffix)element.append(document.createTextNode(suffix));
+    last=start+candidate.length;
+  }
+  if(last<raw.length)element.append(document.createTextNode(raw.slice(last)));
+}
+
 // Community news: the app backend refreshes YouTube data once every six hours.
 async function openCommunityNews(){
   const dialog=$('#communityNewsDialog');
@@ -824,7 +853,7 @@ async function openCommunityNews(){
     const post=await response.json();
     if(!post?.url)throw new Error('Post unavailable');
     link.href=post.url;
-    if(post.text){text.textContent=post.text;text.classList.remove('hidden');}
+    if(post.text){renderCommunityNewsText(text,post.text);text.classList.remove('hidden');}
     if(post.imageUrl){image.src=post.imageUrl;image.classList.remove('hidden');}
     status.classList.add('hidden');
   }catch{
