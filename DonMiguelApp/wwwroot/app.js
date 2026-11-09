@@ -293,7 +293,8 @@ function renderHero(){
   els.hero.style.backgroundImage=`url("${v.thumbnail}")`;
   els.hero.innerHTML='';
   els.heroInfo.classList.remove('hidden');
-  els.heroInfo.innerHTML=`<div class="hero-actions hero-actions-single"><button id="listenNowButton" class="hero-play-new-release" aria-label="Play new release"><span class="hero-play-icon">▶</span><span>Play new Release</span></button></div>`;
+  els.heroInfo.innerHTML=`<div class="hero-actions hero-actions-single"><button id="listenNowButton" class="hero-play-new-release" aria-label="Play new release"><span class="hero-play-icon">▶</span><span>Play new Release</span></button><button id="communityNewsButton" class="hero-community-news" aria-label="Open latest community news"><span aria-hidden="true">◉</span><span>News</span></button></div>`;
+  $('#communityNewsButton').onclick=e=>{e.stopPropagation();openCommunityNews();};
   $('#listenNowButton').onclick=e=>{e.stopPropagation();selectTrack(v.id,false);};
 }
 
@@ -801,3 +802,34 @@ function setupLegalDialogs(){
   });
 }
 window.addEventListener('load',setupLegalDialogs);
+
+
+// Community news: the app backend refreshes YouTube data once every six hours.
+async function openCommunityNews(){
+  const dialog=$('#communityNewsDialog');
+  if(!dialog)return;
+  const status=$('#communityNewsStatus');
+  const image=$('#communityNewsImage');
+  const text=$('#communityNewsText');
+  const link=$('#communityNewsLink');
+  status.textContent='Loading latest YouTube post …';
+  status.classList.remove('hidden');
+  image.classList.add('hidden');
+  text.classList.add('hidden');
+  link.href='https://www.youtube.com/@migflow/posts';
+  dialog.showModal();
+  try{
+    const response=await fetch('/api/youtube/community/latest',{cache:'no-store'});
+    if(!response.ok || response.status===204)throw new Error('No current public post available');
+    const post=await response.json();
+    if(!post?.url)throw new Error('Post unavailable');
+    link.href=post.url;
+    if(post.text){text.textContent=post.text;text.classList.remove('hidden');}
+    if(post.imageUrl){image.src=post.imageUrl;image.classList.remove('hidden');}
+    status.classList.add('hidden');
+  }catch{
+    status.textContent='The latest community post is temporarily unavailable. You can open the YouTube Posts page below.';
+  }
+}
+$('#closeCommunityNews')?.addEventListener('click',()=>$('#communityNewsDialog').close());
+$('#communityNewsDialog')?.addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.close();});

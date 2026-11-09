@@ -23,6 +23,17 @@ builder.Services.AddHttpClient<PushNotificationService>(client =>
     client.DefaultRequestHeaders.UserAgent.ParseAdd("DonMiguelApp/1.5");
 });
 
+builder.Services.AddHttpClient("CommunityPosts", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(20);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
+    client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
+});
+
+builder.Services.AddSingleton<CommunityPostsService>(sp => new CommunityPostsService(
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("CommunityPosts"),
+    sp.GetRequiredService<ILogger<CommunityPostsService>>()));
+
 var app = builder.Build();
 if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("RENDER")))
 {
@@ -49,6 +60,12 @@ app.UseStaticFiles(new StaticFileOptions
             ctx.Context.Response.Headers.CacheControl = "no-cache, must-revalidate, max-age=0";
         }
     }
+});
+
+app.MapGet("/api/youtube/community/latest", async (CommunityPostsService posts, CancellationToken ct) =>
+{
+    var post = await posts.GetLatestAsync(ct);
+    return post is null ? Results.NoContent() : Results.Ok(post);
 });
 
 app.MapGet("/api/status", (YouTubeService yt, IConfiguration cfg) => Results.Ok(new
@@ -97,7 +114,7 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
 app.MapGet("/api/app-version", (HttpContext context) =>
 {
     context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-    return Results.Ok(new { version = "1.6.11" });
+    return Results.Ok(new { version = "1.6.12" });
 });
 
 

@@ -126,7 +126,7 @@ console.error('OneSignal init failed', error);
             <span>Privacy Policy</span><b>›</b>
           </a>
           <div>
-            <span>App Version</span><small>1.6.11</small>
+            <span>App Version</span><small>1.6.12</small>
           </div>
         </div>
       </section>
@@ -159,6 +159,16 @@ console.error('OneSignal init failed', error);
       <button id="queueButton" class="control-button mini-library-button" aria-label="Track list">☷</button>
     </section>
   </div>
+
+  <dialog id="communityNewsDialog" class="menu-dialog community-news-dialog" aria-labelledby="communityNewsTitle">
+    <div class="dialog-header"><strong id="communityNewsTitle">Don Miguel News</strong><button id="closeCommunityNews" class="icon-button unified-close-button" aria-label="Close news">×</button></div>
+    <div class="community-news-body">
+      <p id="communityNewsStatus" role="status">Loading latest YouTube post …</p>
+      <img id="communityNewsImage" class="hidden" alt="YouTube community post image" loading="lazy">
+      <p id="communityNewsText" class="community-news-text hidden"></p>
+      <a id="communityNewsLink" class="community-news-link" href="https://www.youtube.com/@migflow/posts" target="_blank" rel="noopener noreferrer">View on YouTube ↗</a>
+    </div>
+  </dialog>
 
   <dialog id="nowPlayingDialog" class="now-playing-dialog">
     <div class="dialog-header">
@@ -225,7 +235,7 @@ console.error('OneSignal init failed', error);
         <div class="info-links">
           <a href="#legal-notice" data-open-legal="imprint"><span>Legal Notice</span><b>›</b></a>
           <a href="#privacy-policy" data-open-legal="privacy"><span>Privacy Policy</span><b>›</b></a>
-          <div><span>App Version</span><small>1.6.11</small></div>
+          <div><span>App Version</span><small>1.6.12</small></div>
         </div>
       </section>
     </div>
