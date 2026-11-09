@@ -8,7 +8,8 @@ public sealed record VideoItem(
     DateTimeOffset PublishedAt,
     string Duration,
     string ChannelTitle,
-    long ViewCount);
+    long ViewCount,
+    long CommentCount = 0);
 
 public sealed record PlaylistItem(
     string Id,

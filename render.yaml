@@ -11,3 +11,13 @@ services:
         sync: false
       - key: YouTube__Handle
         value: "@migflow"
+      - key: OneSignal__ApiKey
+        sync: false
+      - key: OneSignal__AppId
+        value: "2cf0f3d8-b077-4ea6-b56b-e15831c8c24d"
+      - key: OneSignal__AppUrl
+        value: "https://donmiguelapp.onrender.com"
+      - key: PushCheck__Secret
+        sync: false
+      - key: PushCheck__MaxReleaseAgeHours
+        value: "12"

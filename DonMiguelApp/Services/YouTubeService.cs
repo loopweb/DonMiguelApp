@@ -92,7 +92,8 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
                 published,
                 details.Duration,
                 snippet.TryGetProperty("channelTitle", out var c) ? c.GetString() ?? channel.Title : channel.Title,
-                details.ViewCount);
+                details.ViewCount,
+                details.CommentCount);
         }
 
         return null;
@@ -149,7 +150,8 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
                 published,
                 details.Duration,
                 snippet.TryGetProperty("channelTitle", out var c) ? c.GetString() ?? channel.Title : channel.Title,
-                details.ViewCount);
+                details.ViewCount,
+                details.CommentCount);
         }).OrderByDescending(x => x.PublishedAt).ToArray();
 
         return await RemoveYouTubeShortsAsync(videos, detailsMap, ct);
@@ -206,7 +208,8 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
                 published,
                 details.Duration,
                 snippet.TryGetProperty("channelTitle", out var c) ? c.GetString() ?? "Don Miguel de Cabarete" : "Don Miguel de Cabarete",
-                details.ViewCount);
+                details.ViewCount,
+                details.CommentCount);
         }).ToArray();
 
         return await RemoveYouTubeShortsAsync(videos, detailsMap, ct);
@@ -271,8 +274,9 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
                 var id = item.GetProperty("id").GetString() ?? "";
                 var iso = item.GetProperty("contentDetails").GetProperty("duration").GetString() ?? "";
                 var views = item.TryGetProperty("statistics", out var stats) && stats.TryGetProperty("viewCount", out var viewCount) && long.TryParse(viewCount.GetString(), out var parsed) ? parsed : 0;
+                var comments = item.TryGetProperty("statistics", out var commentStats) && commentStats.TryGetProperty("commentCount", out var commentCount) && long.TryParse(commentCount.GetString(), out var parsedComments) ? parsedComments : 0;
                 var durationSeconds = ParseDurationSeconds(iso);
-                result[id] = new VideoDetails(FormatDuration(iso), views, durationSeconds);
+                result[id] = new VideoDetails(FormatDuration(iso), views, durationSeconds, comments);
             }
         }
         return result;
@@ -364,5 +368,5 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
         catch { return ""; }
     }
 
-    private sealed record VideoDetails(string Duration, long ViewCount, double DurationSeconds);
+    private sealed record VideoDetails(string Duration, long ViewCount, double DurationSeconds, long CommentCount = 0);
 }
