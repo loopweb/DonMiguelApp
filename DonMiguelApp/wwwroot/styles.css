@@ -43,7 +43,7 @@ a{color:var(--ui)}
 .app-preloader.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
 .app-preloader p{margin:0;color:var(--text);font-size:clamp(.82rem,3vw,1.05rem);letter-spacing:.14em;opacity:.9}
 .preloader-dots{display:flex;gap:11px;align-items:center;margin-top:20px}
-.preloader-dots i{display:block;width:6px;height:6px;border-radius:50%;background:var(--text);opacity:.35;animation:preloaderDot 1.4s ease-in-out infinite}
+.preloader-dots i{display:block;width:6px;height:6px;border-radius:50%;background:var(--accent-hi);opacity:.35;animation:preloaderDot 1.4s ease-in-out infinite}
 .preloader-dots i:nth-child(2){animation-delay:.1s}
 .preloader-dots i:nth-child(3){animation-delay:.2s}
 .preloader-dots i:nth-child(4){animation-delay:.3s}
@@ -68,8 +68,9 @@ a{color:var(--ui)}
 }
 
 .topbar{grid-area:header;height:64px;display:flex;align-items:center;justify-content:flex-start;padding:0 16px;border-bottom:1px solid #161616}
-.brand{min-width:0;font-size:1.3rem;font-weight:800;letter-spacing:.01em;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.brand-accent{color:var(--accent-hi)}
+.brand{min-width:0;display:flex;align-items:baseline;gap:.4em;white-space:nowrap;overflow:hidden;color:var(--text)}
+.brand-accent{font-size:1.65rem;font-weight:800;letter-spacing:.01em;color:var(--accent-hi)}
+.brand-rest{font-size:1.05rem;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- Stage: player + controls ---------- */
 .stage{grid-area:stage;background:var(--bg);border-bottom:1px solid #1c1c1c}
@@ -148,10 +149,6 @@ a{color:var(--ui)}
 
 /* Home: news */
 .news-card{padding:14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
-.news-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.news-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#1b1b1b}
-.news-head strong{display:block;font-size:.9rem}
-.news-head small{display:block;font-size:.74rem;color:var(--muted)}
 .news-card > p{margin:0}
 .news-content.has-image{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:start}
 .news-thumb{display:block;width:100%;padding:0;border:0;border-radius:10px;overflow:hidden;background:#1b1b1b;cursor:zoom-in}
@@ -280,6 +277,8 @@ body.cinema .video-frame{position:fixed;inset:0;z-index:100;width:100vw;height:1
 /* ---------- Short phones (e.g. iPhone SE): tighter stage ---------- */
 @media (max-height:700px) and (orientation:portrait){
   .topbar{height:52px}
+  .brand-accent{font-size:1.4rem}
+  .brand-rest{font-size:.95rem}
   .seek-row{padding-top:2px}
   #seekBar{height:18px}
   .now-text strong{font-size:.94rem}
@@ -302,6 +301,8 @@ body.cinema .video-frame{position:fixed;inset:0;z-index:100;width:100vw;height:1
     grid-template-areas:"header header" "stage tabs" "stage main";
   }
   .topbar{height:76px;padding:0 4px}
+  .brand-accent{font-size:1.9rem}
+  .brand-rest{font-size:1.15rem}
   .stage{align-self:start;margin-top:18px;overflow:hidden;border:1px solid #1d1d1d;border-radius:16px}
   .tabbar{margin-top:18px;padding-bottom:0;border:1px solid #1e1e1e;border-radius:14px;overflow:hidden}
   .tab{height:48px;flex-direction:row;gap:8px;font-size:.84rem}
