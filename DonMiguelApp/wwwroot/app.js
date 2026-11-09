@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.0.0';
+const APP_VERSION='2.0.2';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -71,8 +71,8 @@ const els={
   commentsButton:$('#commentsButton'),commentBadge:$('#commentBadge'),
   sheet:$('#commentsSheet'),sheetHead:$('#commentsSheetHead'),comments:$('#comments'),
   commentCount:$('#commentCount'),closeComments:$('#closeComments'),
-  releaseCard:$('#releaseCard'),releaseThumb:$('#releaseThumb'),releaseTitle:$('#releaseTitle'),
-  releaseMeta:$('#releaseMeta'),releasePlay:$('#releasePlayButton'),releaseShare:$('#releaseShareButton'),
+  poster:$('#heroPoster'),posterImage:$('#heroImage'),posterTitle:$('#heroTitle'),
+  posterMeta:$('#heroMeta'),posterPlay:$('#heroPlayButton'),
   search:$('#searchInput'),genres:$('#genreBar'),libraryHeading:$('#libraryHeading'),
   count:$('#trackCount'),status:$('#statusBox'),list:$('#trackList'),
   tabs:[...document.querySelectorAll('.tab[data-view]')],
@@ -165,9 +165,9 @@ async function load(){
   }catch(e){
     els.status.textContent=e.message;
     els.status.hidden=false;
-    els.releaseCard.classList.remove('is-loading-card');
-    els.releaseTitle.textContent='Content unavailable';
-    els.releaseMeta.textContent='Please try again later.';
+    els.poster.classList.remove('is-loading-card');
+    els.posterTitle.textContent='Content unavailable';
+    els.posterMeta.textContent='Please try again later.';
     els.nowTitle.textContent='Content unavailable';
   }finally{
     closePreloader();
@@ -204,41 +204,36 @@ els.tabs.forEach(tab=>tab.addEventListener('click',()=>{
   setView(tab.dataset.view);
 }));
 
-/* ---------- Home: new release ---------- */
+/* ---------- Release poster on the stage ----------
+   On start the stage shows the newest release as a large poster. As soon as
+   anything starts playing the poster is removed for the rest of the session,
+   so the YouTube player itself is never covered while it plays. */
+
+let posterDismissed=false;
 
 function renderRelease(){
   const v=state.latestVideo;
-  if(!v)return;
-  els.releaseCard.classList.remove('is-loading-card');
-  if(v.thumbnail){els.releaseThumb.src=v.thumbnail;els.releaseThumb.hidden=false;}
-  els.releaseTitle.textContent=displayTitle(v.title);
-  const days=(Date.now()-new Date(v.publishedAt).getTime())/86400000;
-  const parts=[];
-  if(days>=0&&days<14)parts.push('New');
-  parts.push(relativeDate(v.publishedAt));
+  if(!v||posterDismissed)return;
+  els.poster.classList.remove('is-loading-card');
+  if(v.thumbnail){els.posterImage.src=v.thumbnail;els.posterImage.hidden=false;}
+  els.posterTitle.textContent=displayTitle(v.title);
+  const parts=[relativeDate(v.publishedAt)];
   if(v.viewCount)parts.push(`${compact(v.viewCount)} views`);
-  els.releaseMeta.textContent=parts.join(' · ');
-  els.releasePlay.disabled=false;
-  els.releaseShare.hidden=!(navigator.share||navigator.clipboard);
+  els.posterMeta.textContent=parts.join(' · ');
+  els.posterPlay.disabled=false;
+  els.posterPlay.setAttribute('aria-label',`Play new release: ${displayTitle(v.title)}`);
 }
-els.releasePlay.addEventListener('click',()=>{
-  if(state.latestVideo)selectTrack(state.latestVideo.id,true);
-});
-els.releaseShare.addEventListener('click',async()=>{
-  const v=state.latestVideo;
-  if(!v)return;
-  const url=`https://youtu.be/${encodeURIComponent(v.id)}`;
-  const title=`${displayTitle(v.title)} – Don Miguel de Cabarete`;
-  try{
-    if(navigator.share){await navigator.share({title,text:title,url});return;}
-    await navigator.clipboard.writeText(url);
-    els.releaseShare.classList.add('is-done');
-    els.releaseShare.setAttribute('aria-label','Link copied');
-    setTimeout(()=>{
-      els.releaseShare.classList.remove('is-done');
-      els.releaseShare.setAttribute('aria-label','Share new release');
-    },1800);
-  }catch{/* share sheet dismissed */}
+
+function dismissPoster(){
+  if(posterDismissed)return;
+  posterDismissed=true;
+  els.poster.remove();
+}
+
+els.posterPlay.addEventListener('click',()=>{
+  if(!state.latestVideo)return;
+  dismissPoster();
+  selectTrack(state.latestVideo.id,true);
 });
 
 async function refreshLatestRelease(){
@@ -306,9 +301,13 @@ els.search.addEventListener('input',e=>{state.query=e.target.value;applyFilters(
 
 /* ---------- Links ---------- */
 
-$('#musicLinks').innerHTML=linkGroups.music.map(([name,url,icon])=>`<a class="tile" href="${esc(url)}" target="_blank" rel="noopener"><img src="/assets/icons/${esc(icon)}" alt=""><span>${esc(name)}</span></a>`).join('');
-$('#officialLinks').innerHTML=linkGroups.official.map(([name,url,sub,icon])=>`<a class="row" href="${esc(url)}" target="_blank" rel="noopener"><span class="row-main"><img src="/assets/icons/${esc(icon)}" alt=""><span class="row-text"><strong>${esc(name)}</strong><small>${esc(sub)}</small></span></span><b aria-hidden="true">↗</b></a>`).join('');
-$('#socialLinks').innerHTML=linkGroups.social.map(([name,url,icon])=>`<a class="tile" href="${esc(url)}" target="_blank" rel="noopener"><img src="/assets/icons/${esc(icon)}" alt=""><span>${esc(name)}</span></a>`).join('');
+// Plain text links, no logos.
+function textLinkRow(name,url){
+  return `<a class="row" href="${esc(url)}" target="_blank" rel="noopener"><span>${esc(name)}</span><b aria-hidden="true">↗</b></a>`;
+}
+$('#musicLinks').innerHTML=linkGroups.music.map(([name,url])=>textLinkRow(name,url)).join('');
+$('#officialLinks').innerHTML=linkGroups.official.map(([name,url])=>textLinkRow(name,url)).join('');
+$('#socialLinks').innerHTML=linkGroups.social.map(([name,url])=>textLinkRow(name,url)).join('');
 
 /* ---------- Player ---------- */
 
@@ -318,6 +317,7 @@ function selectTrack(id,shouldPlay=true){
   state.selectedId=id;
   state.pendingVideoId=id;
   state.pendingPlay=!!shouldPlay;
+  if(shouldPlay)dismissPoster();
   els.nowTitle.textContent=displayTitle(v.title);
   const meta=['Don Miguel de Cabarete'];
   if(v.viewCount)meta.push(`${compact(v.viewCount)} views`);
@@ -359,6 +359,7 @@ function togglePlay(){
     state.pendingPlay=false;
     state.player.pauseVideo();
   }else{
+    dismissPoster();
     state.pendingPlay=true;
     state.pendingVideoId=state.selectedId;
     state.player.playVideo();
@@ -366,6 +367,7 @@ function togglePlay(){
 }
 
 function syncPlayIcons(){
+  if(state.playing)dismissPoster();
   els.play.classList.toggle('is-playing',state.playing);
   els.play.setAttribute('aria-label',state.playing?'Pause':'Play');
   els.app.classList.toggle('is-playing',state.playing);

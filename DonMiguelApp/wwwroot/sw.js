@@ -1,8 +1,8 @@
 self.addEventListener('message',event=>{
   if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
 });
-const CACHE='donmiguel-v2.0.0';
-const ASSETS=['/','/index.html','/styles.css?v=2.0.0','/app.js?v=2.0.0','/manifest.webmanifest','/assets/icons/spotify.svg','/assets/icons/applemusic.svg','/assets/icons/amazonmusic.svg','/assets/icons/youtubemusic.svg','/assets/icons/youtube.svg','/assets/icons/laut.svg','/assets/icons/homepage.svg','/assets/icons/unitedmasters.svg','/assets/icons/whatsapp.svg','/assets/icons/instagram.svg','/assets/icons/tiktok.svg','/assets/icons/facebook.svg','/assets/icons/x.svg'];
+const CACHE='donmiguel-v2.0.2';
+const ASSETS=['/','/index.html','/styles.css?v=2.0.2','/app.js?v=2.0.2','/manifest.webmanifest','/assets/icons/spotify.svg','/assets/icons/applemusic.svg','/assets/icons/amazonmusic.svg','/assets/icons/youtubemusic.svg','/assets/icons/youtube.svg','/assets/icons/laut.svg','/assets/icons/homepage.svg','/assets/icons/unitedmasters.svg','/assets/icons/whatsapp.svg','/assets/icons/instagram.svg','/assets/icons/tiktok.svg','/assets/icons/facebook.svg','/assets/icons/x.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 

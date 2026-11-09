@@ -6,7 +6,7 @@
   <meta name="google" content="notranslate">
   <meta name="theme-color" content="#050505">
   <meta name="description" content="Official app of Don Miguel de Cabarete">
-  <link rel="stylesheet" href="/styles.css?v=2.0.0">
+  <link rel="stylesheet" href="/styles.css?v=2.0.2">
   <title>Don Miguel de Cabarete</title>
 
   <link rel="manifest" href="/manifest.webmanifest">
@@ -77,7 +77,10 @@ console.error('OneSignal init failed', error);
 
   <div id="app" class="app" aria-hidden="true">
     <header class="topbar">
-      <div class="brand" aria-label="Don Miguel de Cabarete"><span class="crown" aria-hidden="true">♛</span><strong>DON MIGUEL</strong><small>DE CABARETE</small></div>
+      <div class="brand" aria-label="Don Miguel de Cabarete">
+        <span class="crown" aria-hidden="true">♛</span>
+        <span class="brand-text"><strong>DON MIGUEL</strong><small>DE CABARETE</small></span>
+      </div>
     </header>
 
     <!-- The stage: one YouTube player for the whole app. It is never hidden,
@@ -85,6 +88,19 @@ console.error('OneSignal init failed', error);
     <section class="stage" aria-label="Player">
       <div id="videoFrame" class="video-frame">
         <div id="youtubePlayer"></div>
+        <!-- Release poster: shown on start in place of the video, removed for good
+             as soon as playback starts. Nothing ever covers the playing video. -->
+        <div id="heroPoster" class="poster is-loading-card">
+          <img id="heroImage" class="poster-image" alt="" hidden>
+          <div class="poster-body">
+            <span class="poster-kicker">New release</span>
+            <h2 id="heroTitle">Loading …</h2>
+            <small id="heroMeta"></small>
+          </div>
+          <button id="heroPlayButton" class="poster-play" type="button" aria-label="Play new release" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4.8l11.5 7.2L8 19.2z" fill="currentColor"/></svg>
+          </button>
+        </div>
         <button id="exitCinemaButton" class="exit-cinema" type="button" aria-label="Exit full screen" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
@@ -135,25 +151,7 @@ console.error('OneSignal init failed', error);
 
       <section id="view-home" class="view" aria-labelledby="homeTitle">
         <h1 id="homeTitle" class="sr-only">Home</h1>
-        <div class="section-head"><h2>New Release</h2></div>
-        <article id="releaseCard" class="release-card is-loading-card">
-          <img id="releaseThumb" alt="" hidden>
-          <div class="release-body">
-            <strong id="releaseTitle">Loading …</strong>
-            <small id="releaseMeta"></small>
-            <div class="release-actions">
-              <button id="releasePlayButton" class="btn-primary" type="button" disabled>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4.8l11.5 7.2L8 19.2z" fill="currentColor"/></svg>
-                <span>Play</span>
-              </button>
-              <button id="releaseShareButton" class="btn-icon" type="button" aria-label="Share new release" hidden>
-                <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
-              </button>
-            </div>
-          </div>
-        </article>
-
-        <div class="section-head"><h2>News</h2><span>Latest community post</span></div>
+        <div class="section-head"><h2>News</h2><span>From the YouTube channel</span></div>
         <article class="news-card">
           <div class="news-head">
             <img class="news-avatar" src="/assets/icons/icon-192.png" alt="">
@@ -181,11 +179,11 @@ console.error('OneSignal init failed', error);
       <section id="view-links" class="view" aria-labelledby="linksTitle" hidden>
         <h1 id="linksTitle" class="view-title">Links</h1>
         <h2 class="group-title">Listen &amp; buy</h2>
-        <div id="musicLinks" class="tile-grid"></div>
+        <div id="musicLinks" class="row-list"></div>
         <h2 class="group-title">Official</h2>
         <div id="officialLinks" class="row-list"></div>
         <h2 class="group-title">Social media</h2>
-        <div id="socialLinks" class="tile-grid tile-grid-small"></div>
+        <div id="socialLinks" class="row-list"></div>
       </section>
 
       <section id="view-settings" class="view" aria-labelledby="settingsTitle" hidden>
@@ -203,7 +201,7 @@ console.error('OneSignal init failed', error);
           <a class="row" href="#privacy-policy" data-open-legal="privacy"><span>Privacy Policy</span><b aria-hidden="true">›</b></a>
           <a class="row" href="https://www.youtube.com/t/terms" target="_blank" rel="noopener"><span>YouTube Terms of Service</span><b aria-hidden="true">↗</b></a>
           <a class="row" href="https://policies.google.com/privacy" target="_blank" rel="noopener"><span>Google Privacy Policy</span><b aria-hidden="true">↗</b></a>
-          <div class="row"><span>App Version</span><small>2.0.0</small></div>
+          <div class="row"><span>App Version</span><small>2.0.2</small></div>
         </div>
       </section>
     </main>
@@ -333,6 +331,6 @@ Email: <a href="mailto:donmiguel@vodafonemail.de">donmiguel@vodafonemail.de</a><
     </div>
   </dialog>
 
-  <script src="/app.js?v=2.0.0" defer></script>
+  <script src="/app.js?v=2.0.2" defer></script>
 </body>
 </html>
