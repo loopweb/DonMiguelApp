@@ -535,7 +535,7 @@ function syncDesktopLinks(){
   if(ds)ds.innerHTML=$('#socialLinks')?.innerHTML||'';
 }
 
-const APP_VERSION='1.6.18';
+const APP_VERSION='1.6.19';
 let pwaUpdateReloadPending=false;
 
 function safeReloadForUpdate(){
@@ -875,24 +875,21 @@ async function openCommunityNews(){
   const status=$('#communityNewsStatus');
   const image=$('#communityNewsImage');
   const text=$('#communityNewsText');
-  const link=$('#communityNewsLink');
   status.textContent='Loading latest YouTube post …';
   status.classList.remove('hidden');
   image.classList.add('hidden');
   text.classList.add('hidden');
-  link.href='https://www.youtube.com/@migflow/posts';
   dialog.showModal();
   try{
     const response=await fetch('/api/youtube/community/latest',{cache:'no-store'});
     if(!response.ok || response.status===204)throw new Error('No current public post available');
     const post=await response.json();
     if(!post?.url)throw new Error('Post unavailable');
-    link.href=post.url;
     if(post.text){renderCommunityNewsRuns(text,post);text.classList.remove('hidden');}
     if(post.imageUrl){image.src=post.imageUrl;image.classList.remove('hidden');}
     status.classList.add('hidden');
   }catch{
-    status.textContent='The latest community post is temporarily unavailable. You can open the YouTube Posts page below.';
+    status.textContent='The latest community post is temporarily unavailable.';
   }
 }
 $('#closeCommunityNews')?.addEventListener('click',()=>$('#communityNewsDialog').close());

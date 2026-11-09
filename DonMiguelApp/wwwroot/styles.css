@@ -1149,7 +1149,6 @@ textarea:focus-visible {
 .community-news-text{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;margin:12px 0 20px;color:#f5f5f5;}
 .community-news-body img{display:block;max-width:100%;height:auto;border-radius:10px;margin:12px auto;}
 .community-news-body p[role=status]{color:#ccc;line-height:1.5;}
-.community-news-link{display:inline-block;margin-top:10px;padding:12px 16px;border-radius:8px;background:#171717;border:1px solid #b88b38;color:#f1c566;font-weight:750;text-decoration:none;}
 @media(max-width:380px){.hero-community-news{flex-basis:90px;font-size:.87rem;}.hero-actions-single{gap:7px!important;}}
 
 /* v1.6.13: active hyperlinks in community posts */
@@ -1158,5 +1157,5 @@ textarea:focus-visible {
 
 /* v1.6.17: One consistent app layout on all screen sizes; no desktop-specific layout. */
 
-/* v1.6.18 — keep the news CTA directly clickable in the unified layout. */
+/* v1.6.19 — keep the news CTA directly clickable in the unified layout. */
 .hero-community-news{position:relative;z-index:2;pointer-events:auto;touch-action:manipulation;}
