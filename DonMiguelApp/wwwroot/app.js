@@ -818,6 +818,8 @@ function renderCommunityNewsText(element, value){
     const trimmed=candidate.replace(/[.,!?;:)}\]\u00bb]+$/g,'');
     const suffix=candidate.slice(trimmed.length);
     try{
+      // An ellipsis is a visible truncation, not a usable destination.
+      if(/(?:\.\.\.|…)(?:[.,!?;:)}\]\u00bb]*)$/.test(candidate))throw new Error('Truncated YouTube URL');
       const url=new URL(trimmed.startsWith('www.')?'https://'+trimmed:trimmed);
       if(url.protocol!=='https:' && url.protocol!=='http:')throw new Error('Unsupported URL scheme');
       const anchor=document.createElement('a');
@@ -836,7 +838,7 @@ function renderCommunityNewsText(element, value){
 // Preserve YouTube's real target URLs, even when the visible text is shortened.
 function renderCommunityNewsRuns(element, post){
   const runs=post.runs;
-  if(!Array.isArray(runs) || !runs.length || runs.map(r=>r.text||'').join('')!==post.text){
+  if(!Array.isArray(runs) || !runs.length){
     renderCommunityNewsText(element,post.text);
     return;
   }

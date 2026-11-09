@@ -148,6 +148,9 @@ public sealed class CommunityPostsService
 
     // YouTube can abbreviate displayed URLs while keeping the actual destination
     // inside each text run's navigationEndpoint. Preserve both for the client.
+    // Different YouTube renderers represent linked text differently:
+    // classic 'runs' attach navigationEndpoint to each text segment;
+    // newer view models attach commandRuns with offsets into the full string.
     private static List<CommunityTextRun>? ReadPostRuns(JsonElement renderer)
     {
         foreach (var key in new[] { "contentText", "content", "contentTextViewModel" })
@@ -174,6 +177,35 @@ public sealed class CommunityPostsService
                 }
                 if (result.Count > 0) return result;
             }
+            // New text view model: the plain content and clickable spans are separate.
+            if (node.TryGetProperty("content", out var rawText) && rawText.ValueKind == JsonValueKind.String
+                && node.TryGetProperty("commandRuns", out var commandRuns)
+                && commandRuns.ValueKind == JsonValueKind.Array)
+            {
+                var full = rawText.GetString() ?? "";
+                var links = new List<(int Start, int End, string Url)>();
+                foreach (var command in commandRuns.EnumerateArray())
+                {
+                    if (command.ValueKind != JsonValueKind.Object) continue;
+                    if (!command.TryGetProperty("startIndex", out var start) || !start.TryGetInt32(out var index) ||
+                        !command.TryGetProperty("length", out var length) || !length.TryGetInt32(out var len)) continue;
+                    var url = FindRunLink(command);
+                    if (url is null || index < 0 || len <= 0 || index > full.Length - len) continue;
+                    links.Add((index, index + len, url));
+                }
+                links.Sort((a, b) => a.Start.CompareTo(b.Start));
+                var parts = new List<CommunityTextRun>();
+                var offset = 0;
+                foreach (var link in links)
+                {
+                    if (link.Start < offset) continue;
+                    if (link.Start > offset) parts.Add(new CommunityTextRun(full[offset..link.Start], null));
+                    parts.Add(new CommunityTextRun(full[link.Start..link.End], link.Url));
+                    offset = link.End;
+                }
+                if (offset < full.Length) parts.Add(new CommunityTextRun(full[offset..], null));
+                if (parts.Count > 0) return parts;
+            }
             foreach (var prop in node.EnumerateObject())
             {
                 var nested = FindTextRuns(prop.Value);
@@ -193,16 +225,28 @@ public sealed class CommunityPostsService
 
     private static string? FindRunLink(JsonElement run)
     {
-        if (!run.TryGetProperty("navigationEndpoint", out var endpoint)) return null;
-        var raw = FindString(endpoint, "url");
+        // Direct endpoints take priority over generic metadata, which sometimes
+        // points at a YouTube redirect instead of the original destination.
+        var endpoint = run;
+        if (run.TryGetProperty("navigationEndpoint", out var navigation)) endpoint = navigation;
+        else if (run.TryGetProperty("onTap", out var onTap)) endpoint = onTap;
+        else if (run.TryGetProperty("command", out var command)) endpoint = command;
+        if (endpoint.ValueKind != JsonValueKind.Object) return null;
+        string? raw = null;
+        if (endpoint.TryGetProperty("urlEndpoint", out var urlEndpoint))
+            raw = FindString(urlEndpoint, "url");
+        if (string.IsNullOrWhiteSpace(raw) && endpoint.TryGetProperty("commandMetadata", out var metadata))
+            raw = FindString(metadata, "url");
+        if (string.IsNullOrWhiteSpace(raw)) raw = FindString(endpoint, "url");
         if (string.IsNullOrWhiteSpace(raw)) return null;
         if (raw.StartsWith("/", StringComparison.Ordinal)) raw = "https://www.youtube.com" + raw;
         if (!Uri.TryCreate(raw, UriKind.Absolute, out var parsed) ||
             (parsed.Scheme != "https" && parsed.Scheme != "http")) return null;
 
-        // Remove YouTube's redirect wrapper when it provides the real destination.
-        if ((parsed.Host == "youtube.com" || parsed.Host.EndsWith(".youtube.com", StringComparison.OrdinalIgnoreCase))
-            && parsed.AbsolutePath.Equals("/redirect", StringComparison.OrdinalIgnoreCase))
+        // Redirect URLs use 'q' or 'url' to store the real destination.
+        if ((parsed.Host.Equals("youtube.com", StringComparison.OrdinalIgnoreCase) ||
+             parsed.Host.EndsWith(".youtube.com", StringComparison.OrdinalIgnoreCase)) &&
+            parsed.AbsolutePath.Equals("/redirect", StringComparison.OrdinalIgnoreCase))
         {
             foreach (var part in parsed.Query.TrimStart('?').Split('&'))
             {
