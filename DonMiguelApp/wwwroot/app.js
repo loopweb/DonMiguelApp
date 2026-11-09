@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.0.2';
+const APP_VERSION='2.0.3';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -71,8 +71,7 @@ const els={
   commentsButton:$('#commentsButton'),commentBadge:$('#commentBadge'),
   sheet:$('#commentsSheet'),sheetHead:$('#commentsSheetHead'),comments:$('#comments'),
   commentCount:$('#commentCount'),closeComments:$('#closeComments'),
-  poster:$('#heroPoster'),posterImage:$('#heroImage'),posterTitle:$('#heroTitle'),
-  posterMeta:$('#heroMeta'),posterPlay:$('#heroPlayButton'),
+  poster:$('#heroPoster'),posterImage:$('#heroImage'),
   search:$('#searchInput'),genres:$('#genreBar'),libraryHeading:$('#libraryHeading'),
   count:$('#trackCount'),status:$('#statusBox'),list:$('#trackList'),
   tabs:[...document.querySelectorAll('.tab[data-view]')],
@@ -166,8 +165,6 @@ async function load(){
     els.status.textContent=e.message;
     els.status.hidden=false;
     els.poster.classList.remove('is-loading-card');
-    els.posterTitle.textContent='Content unavailable';
-    els.posterMeta.textContent='Please try again later.';
     els.nowTitle.textContent='Content unavailable';
   }finally{
     closePreloader();
@@ -214,14 +211,11 @@ let posterDismissed=false;
 function renderRelease(){
   const v=state.latestVideo;
   if(!v||posterDismissed)return;
+  // Image only: covers usually carry their own lettering.
   els.poster.classList.remove('is-loading-card');
   if(v.thumbnail){els.posterImage.src=v.thumbnail;els.posterImage.hidden=false;}
-  els.posterTitle.textContent=displayTitle(v.title);
-  const parts=[relativeDate(v.publishedAt)];
-  if(v.viewCount)parts.push(`${compact(v.viewCount)} views`);
-  els.posterMeta.textContent=parts.join(' · ');
-  els.posterPlay.disabled=false;
-  els.posterPlay.setAttribute('aria-label',`Play new release: ${displayTitle(v.title)}`);
+  els.poster.disabled=false;
+  els.poster.setAttribute('aria-label',`Play new release: ${displayTitle(v.title)}`);
 }
 
 function dismissPoster(){
@@ -230,7 +224,7 @@ function dismissPoster(){
   els.poster.remove();
 }
 
-els.posterPlay.addEventListener('click',()=>{
+els.poster.addEventListener('click',()=>{
   if(!state.latestVideo)return;
   dismissPoster();
   selectTrack(state.latestVideo.id,true);
@@ -301,9 +295,9 @@ els.search.addEventListener('input',e=>{state.query=e.target.value;applyFilters(
 
 /* ---------- Links ---------- */
 
-// Plain text links, no logos.
+// Compact text tiles, no logos.
 function textLinkRow(name,url){
-  return `<a class="row" href="${esc(url)}" target="_blank" rel="noopener"><span>${esc(name)}</span><b aria-hidden="true">↗</b></a>`;
+  return `<a class="link-tile" href="${esc(url)}" target="_blank" rel="noopener"><span>${esc(name)}</span><b aria-hidden="true">↗</b></a>`;
 }
 $('#musicLinks').innerHTML=linkGroups.music.map(([name,url])=>textLinkRow(name,url)).join('');
 $('#officialLinks').innerHTML=linkGroups.official.map(([name,url])=>textLinkRow(name,url)).join('');
@@ -752,6 +746,8 @@ function renderCommunityNewsRuns(element,post){
 // The backend refreshes the post at most every six hours.
 async function loadCommunityNews(){
   const status=$('#communityNewsStatus');
+  const content=$('#newsContent');
+  const imageButton=$('#newsImageButton');
   const image=$('#communityNewsImage');
   const text=$('#communityNewsText');
   try{
@@ -761,16 +757,32 @@ async function loadCommunityNews(){
     if(!post?.text&&!post?.imageUrl)throw new Error('Post unavailable');
     if(post.text){renderCommunityNewsRuns(text,post);text.hidden=false;}
     else text.hidden=true;
-    if(post.imageUrl){image.src=post.imageUrl;image.hidden=false;}
-    else image.hidden=true;
+    if(post.imageUrl){image.src=post.imageUrl;imageButton.hidden=false;}
+    else imageButton.hidden=true;
+    // Image left, text right — only when there is both.
+    content.classList.toggle('has-image',!!post.imageUrl&&!!post.text);
     status.hidden=true;
   }catch{
-    if(text.hidden&&image.hidden){
+    if(text.hidden&&imageButton.hidden){
       status.textContent='No news right now – check back soon.';
       status.hidden=false;
     }
   }
 }
+
+// Tap the news image to see it full size.
+(function setupNewsImageDialog(){
+  const dialog=$('#imageDialog');
+  const big=$('#imageDialogImage');
+  $('#newsImageButton')?.addEventListener('click',()=>{
+    const src=$('#communityNewsImage')?.src;
+    if(!src||!dialog)return;
+    big.src=src;
+    dialog.showModal();
+  });
+  $('#closeImageDialog')?.addEventListener('click',()=>dialog.close());
+  dialog?.addEventListener('click',e=>{if(e.target===dialog||e.target===big)dialog.close();});
+})();
 
 /* ---------- PWA updates ---------- */
 
