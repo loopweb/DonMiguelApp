@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.0.6';
+const APP_VERSION='2.0.7';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -496,9 +496,21 @@ loadYouTubeIframeApi();
 /* ---------- Full screen ---------- */
 
 function fullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement||null;}
+// Phone held upright in full screen: turn the picture 90° so the video
+// fills the screen sideways. iPhone browsers never allow apps to rotate the
+// screen and some Android browsers refuse it, so this covers both.
+const portraitQuery=window.matchMedia('(orientation: portrait)');
+function isFullscreenActive(){return !!fullscreenElement()||document.body.classList.contains('cinema');}
+function updateRotation(){
+  els.videoFrame.classList.toggle('rotate',isFullscreenActive()&&portraitQuery.matches);
+}
+if(portraitQuery.addEventListener)portraitQuery.addEventListener('change',updateRotation);
+else if(portraitQuery.addListener)portraitQuery.addListener(updateRotation);
+
 function enterCinema(){
   document.body.classList.add('cinema');
   els.exitCinema.hidden=false;
+  updateRotation();
 }
 function leaveFullscreen(){
   if(fullscreenElement()){
@@ -507,6 +519,7 @@ function leaveFullscreen(){
   }
   document.body.classList.remove('cinema');
   els.exitCinema.hidden=true;
+  updateRotation();
 }
 function enterFullscreen(){
   const frame=els.videoFrame;
@@ -519,12 +532,16 @@ function enterFullscreen(){
     enterCinema();
   }
 }
-function onFullscreenChange(){
-  const active=!!fullscreenElement()||document.body.classList.contains('cinema');
-  els.exitCinema.hidden=!active;
+async function onFullscreenChange(){
+  els.exitCinema.hidden=!isFullscreenActive();
   if(fullscreenElement()){
-    try{screen.orientation?.lock?.('landscape')?.catch?.(()=>{});}catch{}
+    // Ask for landscape first (works on many Android phones) ...
+    try{await screen.orientation?.lock?.('landscape');}catch{}
+  }else{
+    try{screen.orientation?.unlock?.();}catch{}
   }
+  // ... and rotate the picture ourselves if the phone is still upright.
+  updateRotation();
 }
 els.fullscreen.addEventListener('click',enterFullscreen);
 els.exitCinema.addEventListener('click',leaveFullscreen);
