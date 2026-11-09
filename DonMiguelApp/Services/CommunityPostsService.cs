@@ -11,7 +11,10 @@ public sealed class CommunityPostsService
     private readonly ILogger<CommunityPostsService> _logger;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private CommunityPost? _lastGood;
-    private DateTimeOffset _checkedAt = DateTimeOffset.MinValue;
+    // Next time the YouTube page may be read again: 6 h after a success,
+    // but only 10 min after a failed read, so one hiccup (e.g. a cold start)
+    // no longer hides the news for hours.
+    private DateTimeOffset _nextCheck = DateTimeOffset.MinValue;
     private const string PostsUrl = "https://www.youtube.com/@migflow/posts";
 
     public CommunityPostsService(HttpClient http, ILogger<CommunityPostsService> logger)
@@ -22,11 +25,11 @@ public sealed class CommunityPostsService
 
     public async Task<CommunityPost?> GetLatestAsync(CancellationToken ct)
     {
-        if (DateTimeOffset.UtcNow - _checkedAt < TimeSpan.FromHours(6)) return _lastGood;
+        if (DateTimeOffset.UtcNow < _nextCheck) return _lastGood;
         await _lock.WaitAsync(ct);
         try
         {
-            if (DateTimeOffset.UtcNow - _checkedAt < TimeSpan.FromHours(6)) return _lastGood;
+            if (DateTimeOffset.UtcNow < _nextCheck) return _lastGood;
             try
             {
                 using var response = await _http.GetAsync(PostsUrl + "?hl=en", ct);
@@ -38,12 +41,12 @@ public sealed class CommunityPostsService
                 var post = FindPost(document.RootElement);
                 if (post is null) throw new InvalidOperationException("No public post found in YouTube page");
                 _lastGood = post;
-                _checkedAt = DateTimeOffset.UtcNow;
+                _nextCheck = DateTimeOffset.UtcNow.AddHours(6);
             }
             catch (Exception e)
             {
                 _logger.LogWarning("Community posts could not be refreshed: {Message}", e.Message);
-                _checkedAt = DateTimeOffset.UtcNow; // throttle failed reads too
+                _nextCheck = DateTimeOffset.UtcNow.AddMinutes(10); // retry soon after a failure
             }
             return _lastGood;
         }

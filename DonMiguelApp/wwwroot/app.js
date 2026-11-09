@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.0.3';
+const APP_VERSION='2.0.5';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -744,6 +744,16 @@ function renderCommunityNewsRuns(element,post){
 }
 
 // The backend refreshes the post at most every six hours.
+// If nothing comes back (e.g. the server was just waking up), try again a
+// couple of times and whenever the app is opened again.
+let newsLoaded=false;
+let newsRetries=0;
+let newsRetryTimer=null;
+function scheduleNewsRetry(){
+  if(newsLoaded||newsRetries>=3||newsRetryTimer)return;
+  newsRetries++;
+  newsRetryTimer=setTimeout(()=>{newsRetryTimer=null;loadCommunityNews();},20000*newsRetries);
+}
 async function loadCommunityNews(){
   const status=$('#communityNewsStatus');
   const content=$('#newsContent');
@@ -762,7 +772,9 @@ async function loadCommunityNews(){
     // Image left, text right — only when there is both.
     content.classList.toggle('has-image',!!post.imageUrl&&!!post.text);
     status.hidden=true;
+    newsLoaded=true;
   }catch{
+    scheduleNewsRetry();
     if(text.hidden&&imageButton.hidden){
       status.textContent='No news right now – check back soon.';
       status.hidden=false;
@@ -956,6 +968,7 @@ wakeServer();
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='visible')return;
   wakeServer();
+  if(!newsLoaded){newsRetries=0;loadCommunityNews();}
   setTimeout(refreshLatestRelease,250);
 });
 window.addEventListener('pageshow',()=>setTimeout(refreshLatestRelease,250));
