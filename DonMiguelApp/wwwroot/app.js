@@ -535,7 +535,7 @@ function syncDesktopLinks(){
   if(ds)ds.innerHTML=$('#socialLinks')?.innerHTML||'';
 }
 
-const APP_VERSION='1.2.1';
+const APP_VERSION='1.6.18';
 let pwaUpdateReloadPending=false;
 
 function safeReloadForUpdate(){

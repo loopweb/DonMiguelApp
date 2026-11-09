@@ -1157,3 +1157,6 @@ textarea:focus-visible {
 .community-news-text a:focus-visible{outline:2px solid #f1c566;outline-offset:3px;border-radius:2px;}
 
 /* v1.6.17: One consistent app layout on all screen sizes; no desktop-specific layout. */
+
+/* v1.6.18 — keep the news CTA directly clickable in the unified layout. */
+.hero-community-news{position:relative;z-index:2;pointer-events:auto;touch-action:manipulation;}
