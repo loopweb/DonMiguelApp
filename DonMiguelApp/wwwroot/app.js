@@ -833,6 +833,39 @@ function renderCommunityNewsText(element, value){
   if(last<raw.length)element.append(document.createTextNode(raw.slice(last)));
 }
 
+// Preserve YouTube's real target URLs, even when the visible text is shortened.
+function renderCommunityNewsRuns(element, post){
+  const runs=post.runs;
+  if(!Array.isArray(runs) || !runs.length || runs.map(r=>r.text||'').join('')!==post.text){
+    renderCommunityNewsText(element,post.text);
+    return;
+  }
+  element.replaceChildren();
+  for(const run of runs){
+    const label=String(run.text||'');
+    let target;
+    try{
+      if(run.url){
+        target=new URL(run.url);
+        if(target.protocol!=='https:' && target.protocol!=='http:')target=null;
+      }
+    }catch{target=null;}
+    if(!target){
+      const span=document.createElement('span');
+      renderCommunityNewsText(span,label);
+      element.append(span);
+      continue;
+    }
+    const anchor=document.createElement('a');
+    anchor.href=target.href;
+    anchor.target='_blank';
+    anchor.rel='noopener noreferrer';
+    // For abbreviated URL labels show the full address, not YouTube's ellipsis.
+    anchor.textContent=/^(https?:\/\/|www\.)/i.test(label.trim()) ? target.href : label;
+    element.append(anchor);
+  }
+}
+
 // Community news: the app backend refreshes YouTube data once every six hours.
 async function openCommunityNews(){
   const dialog=$('#communityNewsDialog');
@@ -853,7 +886,7 @@ async function openCommunityNews(){
     const post=await response.json();
     if(!post?.url)throw new Error('Post unavailable');
     link.href=post.url;
-    if(post.text){renderCommunityNewsText(text,post.text);text.classList.remove('hidden');}
+    if(post.text){renderCommunityNewsRuns(text,post);text.classList.remove('hidden');}
     if(post.imageUrl){image.src=post.imageUrl;image.classList.remove('hidden');}
     status.classList.add('hidden');
   }catch{

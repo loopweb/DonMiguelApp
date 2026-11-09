@@ -89,9 +89,10 @@ public sealed class CommunityPostsService
                     var id = FindString(renderer, "postId") ?? FindString(renderer, "postIdText");
                     var text = ReadText(renderer, "contentText") ?? ReadText(renderer, "content") ?? ReadText(renderer, "contentTextViewModel") ?? "";
                     var image = FindImage(renderer);
+                    var runs = ReadPostRuns(renderer);
                     if (!string.IsNullOrWhiteSpace(id) && Regex.IsMatch(id, "^[a-zA-Z0-9_-]+$"))
                     {
-                        return new CommunityPost(id, text, image, "https://www.youtube.com/post/" + id);
+                        return new CommunityPost(id, text, image, "https://www.youtube.com/post/" + id, runs);
                     }
                 }
             }
@@ -145,6 +146,76 @@ public sealed class CommunityPostsService
         return null;
     }
 
+    // YouTube can abbreviate displayed URLs while keeping the actual destination
+    // inside each text run's navigationEndpoint. Preserve both for the client.
+    private static List<CommunityTextRun>? ReadPostRuns(JsonElement renderer)
+    {
+        foreach (var key in new[] { "contentText", "content", "contentTextViewModel" })
+        {
+            if (!renderer.TryGetProperty(key, out var content)) continue;
+            var runs = FindTextRuns(content);
+            if (runs is not null) return runs;
+        }
+        return null;
+    }
+
+    private static List<CommunityTextRun>? FindTextRuns(JsonElement node)
+    {
+        if (node.ValueKind == JsonValueKind.Object)
+        {
+            if (node.TryGetProperty("runs", out var array) && array.ValueKind == JsonValueKind.Array)
+            {
+                var result = new List<CommunityTextRun>();
+                foreach (var run in array.EnumerateArray())
+                {
+                    if (run.ValueKind != JsonValueKind.Object ||
+                        !run.TryGetProperty("text", out var text) || text.ValueKind != JsonValueKind.String) continue;
+                    result.Add(new CommunityTextRun(text.GetString() ?? "", FindRunLink(run)));
+                }
+                if (result.Count > 0) return result;
+            }
+            foreach (var prop in node.EnumerateObject())
+            {
+                var nested = FindTextRuns(prop.Value);
+                if (nested is not null) return nested;
+            }
+        }
+        else if (node.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var entry in node.EnumerateArray())
+            {
+                var nested = FindTextRuns(entry);
+                if (nested is not null) return nested;
+            }
+        }
+        return null;
+    }
+
+    private static string? FindRunLink(JsonElement run)
+    {
+        if (!run.TryGetProperty("navigationEndpoint", out var endpoint)) return null;
+        var raw = FindString(endpoint, "url");
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        if (raw.StartsWith("/", StringComparison.Ordinal)) raw = "https://www.youtube.com" + raw;
+        if (!Uri.TryCreate(raw, UriKind.Absolute, out var parsed) ||
+            (parsed.Scheme != "https" && parsed.Scheme != "http")) return null;
+
+        // Remove YouTube's redirect wrapper when it provides the real destination.
+        if ((parsed.Host == "youtube.com" || parsed.Host.EndsWith(".youtube.com", StringComparison.OrdinalIgnoreCase))
+            && parsed.AbsolutePath.Equals("/redirect", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var part in parsed.Query.TrimStart('?').Split('&'))
+            {
+                var pieces = part.Split('=', 2);
+                if (pieces.Length != 2 || (pieces[0] != "q" && pieces[0] != "url")) continue;
+                var decoded = Uri.UnescapeDataString(pieces[1].Replace("+", "%20"));
+                if (Uri.TryCreate(decoded, UriKind.Absolute, out var target) &&
+                    (target.Scheme == "https" || target.Scheme == "http")) return target.AbsoluteUri;
+            }
+        }
+        return parsed.AbsoluteUri;
+    }
+
     private static string? FindImage(JsonElement node)
     {
         // Only scan attachments, not channel avatars.
@@ -161,4 +232,5 @@ public sealed class CommunityPostsService
     }
 }
 
-public record CommunityPost(string Id, string Text, string? ImageUrl, string Url);
+public record CommunityTextRun(string Text, string? Url);
+public record CommunityPost(string Id, string Text, string? ImageUrl, string Url, List<CommunityTextRun>? Runs = null);
