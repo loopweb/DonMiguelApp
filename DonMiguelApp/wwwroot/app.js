@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.1.6';
+const APP_VERSION='2.2.0';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -76,7 +76,7 @@ const els={
   sheet:$('#commentsSheet'),sheetHead:$('#commentsSheetHead'),comments:$('#comments'),
   commentCount:$('#commentCount'),closeComments:$('#closeComments'),
   poster:$('#heroPoster'),posterImage:$('#heroImage'),
-  descriptionText:$('#descriptionText'),
+  infoTitle:$('#infoTitle'),infoMeta:$('#infoMeta'),descriptionText:$('#descriptionText'),
   newsStatus:$('#newsStatus'),newsGrid:$('#newsGrid'),
   postSheet:$('#postSheet'),postSheetHead:$('#postSheetHead'),postDate:$('#postDate'),
   postImage:$('#postImage'),postText:$('#postText'),closePost:$('#closePost'),
@@ -86,7 +86,7 @@ const els={
   views:{
     home:$('#view-home'),
     library:$('#view-library'),
-    news:$('#view-news'),
+    info:$('#view-info'),
     more:$('#view-more')
   }
 };
@@ -248,9 +248,23 @@ async function refreshLatestRelease(){
   }catch{/* keep what is shown */}
 }
 
-/* ---------- Home: description of the current track (always in full) ---------- */
+/* ---------- Info: the current track — title, release date, views, description ---------- */
 
-function renderDescription(video){
+function formatReleaseDate(value){
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return'';
+  return date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function renderInfo(video){
+  els.infoTitle.textContent=displayTitle(video?.title)||'Don Miguel de Cabarete';
+  const parts=[];
+  const released=formatReleaseDate(video?.publishedAt);
+  if(released)parts.push(`Released ${released}`);
+  if(video?.viewCount)parts.push(`${compact(video.viewCount)} views`);
+  if(video?.duration)parts.push(video.duration);
+  els.infoMeta.textContent=parts.join(' · ');
+
   const text=String(video?.description||'').trim();
   if(text){
     renderLinkedText(els.descriptionText,text);
@@ -349,7 +363,7 @@ function selectTrack(id,shouldPlay=true){
   if(v.viewCount)meta.push(`${compact(v.viewCount)} views`);
   els.nowMeta.textContent=meta.join(' · ');
   updateCommentBadge(v);
-  renderDescription(v);
+  renderInfo(v);
   resetProgress(v.duration);
   markCurrentTrack();
   if(!els.sheet.hidden)loadComments(id);
@@ -722,7 +736,7 @@ function setupPullToRefresh(){
   scroller.addEventListener('touchcancel',()=>{tracking=false;distance=0;hideDot();},{passive:true});
 }
 
-/* ---------- Community news: the latest posts as tiles ---------- */
+/* ---------- Home: community news, the latest posts as tiles ---------- */
 
 // Safely turn visible URLs in YouTube post text into clickable links.
 // Everything else remains a text node (no untrusted HTML injection).
