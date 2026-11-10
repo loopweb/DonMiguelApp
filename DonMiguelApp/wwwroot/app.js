@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.6.1';
+const APP_VERSION='2.7.0';
 
 // The main playlists, always shown first and in this order. All other public
 // playlists of the channel are added behind them automatically (newest first).
@@ -42,6 +42,10 @@ const linkGroups={
 };
 
 const genres=Object.keys(PLAYLISTS);
+// Shown under "Genres" in the playlist overview; everything else (Mixtape
+// first, then the other public playlists) goes under "More playlists".
+const GENRE_LABELS=['Bachata','Merengue','Salsa','Reggaetón','Ballads'];
+const playlistMeta=new Map(); // playlist id -> {thumbnail,itemCount}
 
 // Button name from the YouTube playlist title, without a leading artist name.
 function playlistLabel(title){
@@ -50,10 +54,12 @@ function playlistLabel(title){
   return short||raw;
 }
 
-// Adds the channel's other public playlists as genre buttons.
+// Adds the channel's other public playlists to the overview and keeps the
+// pictures and track counts of all of them.
 async function loadMorePlaylists(){
   try{
     const lists=await fetch('/api/youtube/playlists').then(check);
+    for(const p of Array.isArray(lists)?lists:[])if(p?.id)playlistMeta.set(p.id,{thumbnail:p.thumbnail||'',itemCount:Number(p.itemCount)||0});
     const known=new Set(Object.values(PLAYLISTS));
     const extra=(Array.isArray(lists)?lists:[])
       .filter(p=>p?.id&&!known.has(p.id)&&Number(p.itemCount)>0)
@@ -64,7 +70,7 @@ async function loadMorePlaylists(){
       PLAYLISTS[label]=p.id;
       genres.push(label);
     }
-    if(extra.length)renderGenres();
+    renderGenres();
   }catch{
     // Not critical: the main playlists keep working.
   }
@@ -122,7 +128,7 @@ const els={
   newsStatus:$('#newsStatus'),newsGrid:$('#newsGrid'),
   postSheet:$('#postSheet'),postSheetHead:$('#postSheetHead'),postDate:$('#postDate'),
   postImage:$('#postImage'),postText:$('#postText'),closePost:$('#closePost'),
-  search:$('#searchInput'),libraryTools:$('#libraryTools'),searchToggle:$('#searchToggle'),filterToggle:$('#filterToggle'),filterDot:$('#filterDot'),genres:$('#genreBar'),libraryHeading:$('#libraryHeading'),
+  search:$('#searchInput'),libraryTools:$('#libraryTools'),searchToggle:$('#searchToggle'),filterToggle:$('#filterToggle'),playlistGrid:$('#playlistGrid'),libraryView:$('#view-library'),clearGenre:$('#clearGenre'),libraryHeading:$('#libraryHeading'),
   count:$('#trackCount'),status:$('#statusBox'),list:$('#trackList'),
   tabs:[...document.querySelectorAll('.tab[data-view]')],
   views:{
@@ -368,12 +374,32 @@ function renderInfo(video){
 
 /* ---------- Library ---------- */
 
-function renderGenres(){
-  els.genres.innerHTML=genres.map(g=>`<button class="chip" type="button" data-genre="${esc(g)}" aria-pressed="${g===state.genre}">${esc(g==='All'?'All tracks':g)}</button>`).join('');
-  els.genres.querySelectorAll('[data-genre]').forEach(b=>b.onclick=()=>changeGenre(b.dataset.genre));
-  updateHeading();
-  updateFilterDot();
+function playlistTile(label){
+  const meta=playlistMeta.get(PLAYLISTS[label])||{};
+  const count=meta.itemCount?`${meta.itemCount} ${meta.itemCount===1?'track':'tracks'}`:'';
+  return `<li><button class="track playlist-tile${label===state.genre?' is-current':''}" type="button" data-genre="${esc(label)}"><span class="track-thumb">${meta.thumbnail?`<img src="${esc(meta.thumbnail)}" alt="" loading="lazy">`:''}</span><span class="track-copy"><strong>${esc(label)}</strong><small>${esc(count)}</small></span></button></li>`;
 }
+function renderGenres(){
+  const genreTiles=GENRE_LABELS.filter(g=>PLAYLISTS[g]);
+  const moreTiles=genres.filter(g=>g!=='All'&&!GENRE_LABELS.includes(g));
+  els.playlistGrid.innerHTML=
+    `<li class="grid-head">Genres</li>${genreTiles.map(playlistTile).join('')}`+
+    (moreTiles.length?`<li class="grid-head">More playlists</li>${moreTiles.map(playlistTile).join('')}`:'');
+  els.playlistGrid.querySelectorAll('[data-genre]').forEach(b=>b.onclick=()=>{setOverview(false);changeGenre(b.dataset.genre);});
+  updateHeading();
+}
+
+// The filter swaps the track list for the playlist overview (and back).
+function setOverview(open){
+  els.libraryView.classList.toggle('is-overview',open);
+  els.filterToggle.setAttribute('aria-expanded',open?'true':'false');
+  els.filterToggle.setAttribute('aria-label',open?'Close playlists':'Show playlists');
+  if(open){setSearchOpen(false);renderGenres();}
+  // Start at the top of the overview or of the chosen playlist.
+  const content=document.getElementById('content');
+  if(content&&content.scrollTop>0)content.scrollTop=0;
+}
+els.clearGenre.addEventListener('click',()=>changeGenre('All'));
 
 async function changeGenre(nextGenre){
   if(state.loadingGenre||nextGenre===state.genre)return;
@@ -397,7 +423,10 @@ async function changeGenre(nextGenre){
 
 // While searching, the results come from the whole channel, not the chosen genre.
 function updateHeading(){
-  els.libraryHeading.textContent=state.query.trim()?'Search results':(state.genre==='All'?'All tracks':state.genre);
+  const searching=!!state.query.trim();
+  els.libraryHeading.textContent=searching?'Search results':(state.genre==='All'?'All tracks':state.genre);
+  // The ✕ next to a chosen playlist leads back to all tracks.
+  els.clearGenre.hidden=searching||state.genre==='All';
 }
 
 function applyFilters(){
@@ -433,27 +462,23 @@ function markCurrentTrack(){
 
 els.search.addEventListener('input',e=>{state.query=e.target.value;loadUploads();applyFilters();});
 
-// Magnifier and filter next to the title open the same area (search field and
-// genre chips). The magnifier also brings up the keyboard, the filter does not.
-// Closing clears the search text; the chosen genre stays.
-function setToolsOpen(open,withKeyboard){
+// The magnifier opens the search field with the keyboard. Closing it clears
+// the search text; the chosen playlist stays.
+function setSearchOpen(open){
   els.libraryTools.hidden=!open;
-  for(const b of [els.searchToggle,els.filterToggle])b.setAttribute('aria-expanded',open?'true':'false');
+  els.searchToggle.setAttribute('aria-expanded',open?'true':'false');
   if(open){
-    if(withKeyboard){els.search.focus();loadUploads();}
+    setOverview(false);
+    els.search.focus();
+    loadUploads();
   }else{
     els.search.blur();
     if(state.query){els.search.value='';state.query='';applyFilters();}
   }
-  updateFilterDot();
 }
-// Small dot on the filter while a genre is chosen and the chips are hidden.
-function updateFilterDot(){
-  if(els.filterDot)els.filterDot.hidden=state.genre==='All'||!els.libraryTools.hidden;
-}
-els.searchToggle.addEventListener('click',()=>setToolsOpen(els.libraryTools.hidden,true));
-els.filterToggle.addEventListener('click',()=>setToolsOpen(els.libraryTools.hidden,false));
-els.search.addEventListener('keydown',e=>{if(e.key==='Escape'){setToolsOpen(false);els.searchToggle.focus();}});
+els.searchToggle.addEventListener('click',()=>setSearchOpen(els.libraryTools.hidden));
+els.filterToggle.addEventListener('click',()=>setOverview(!els.libraryView.classList.contains('is-overview')));
+els.search.addEventListener('keydown',e=>{if(e.key==='Escape'){setSearchOpen(false);els.searchToggle.focus();}});
 
 /* ---------- External links (More tab) ---------- */
 

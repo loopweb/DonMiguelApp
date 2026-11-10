@@ -196,8 +196,18 @@ button.action-btn{font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
 .view-title-row .view-title{margin-bottom:0}
 .title-tools{display:flex;gap:2px;margin-right:-8px}
 .library-tools[hidden]{display:none}
-.filter-dot{position:absolute;top:9px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--accent-hi)}
-.filter-dot[hidden]{display:none}
+.library-tools{margin-bottom:14px}
+.heading-wrap{display:flex;align-items:center;gap:4px;min-width:0}
+.heading-wrap h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clear-genre{flex:0 0 auto;width:30px;height:30px;margin:-4px 0;padding:0;border:0;border-radius:50%;background:transparent;color:var(--accent-hi);display:inline-flex;align-items:center;justify-content:center}
+.clear-genre:active{background:var(--press)}
+.clear-genre svg{width:18px;height:18px}
+.clear-genre[hidden]{display:none}
+/* Playlist overview in place of the tracks */
+#view-library:not(.is-overview) #playlistGrid{display:none}
+#view-library.is-overview #libraryHead,#view-library.is-overview #statusBox,#view-library.is-overview #trackList{display:none}
+.grid-head{grid-column:1 / -1;margin:6px 2px -6px;font-size:1.15rem;font-weight:800}
+.grid-head:not(:first-child){margin-top:14px}
 .search{display:flex;align-items:center;gap:10px;height:46px;margin-bottom:2px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--muted)}
 .search:focus-within{border-color:var(--line-strong)}
 .search svg{flex:0 0 auto;width:18px;height:18px}
@@ -206,8 +216,6 @@ button.action-btn{font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
 /* the magnifier/X next to the title already clears and closes the search */
 .search input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
 
-.chips{display:flex;gap:8px;margin:0 -16px 8px;padding:12px 16px 6px;overflow-x:auto;scrollbar-width:none}
-.chips::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;height:38px;padding:0 15px;border:1px solid var(--line);border-radius:19px;background:var(--panel);color:var(--text);font-size:.86rem;font-weight:600;white-space:nowrap}
 .chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff;font-weight:800}
 
@@ -354,7 +362,6 @@ a.row:active,button.row:active{background:var(--press)}
   .tab{height:48px;flex-direction:row;gap:8px;font-size:.84rem}
   .tab svg{width:18px;height:18px}
   .content{padding:18px 4px 28px}
-  .chips{margin-inline:0;padding-inline:0}
   .sheet{grid-row:2 / 4;grid-column:2;margin:18px 0 18px;border:1px solid var(--line);border-radius:16px}
 }
 
