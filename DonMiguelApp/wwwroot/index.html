@@ -17,7 +17,7 @@
   </script>
   <link rel="preload" as="image" href="/assets/dmc-mark.png">
   <meta name="description" content="Official app of Don Miguel de Cabarete">
-  <link rel="stylesheet" href="/styles.css?v=2.4.0">
+  <link rel="stylesheet" href="/styles.css?v=2.5.0">
   <title>Don Miguel de Cabarete</title>
 
   <link rel="manifest" href="/manifest.webmanifest">
@@ -102,9 +102,6 @@ console.error('OneSignal init failed', error);
         <button id="heroPoster" class="poster is-loading-card" type="button" aria-label="Play new release" disabled>
           <img id="heroImage" class="poster-image" alt="" hidden>
         </button>
-        <button id="exitCinemaButton" class="exit-cinema" type="button" aria-label="Exit full screen" hidden>
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
       </div>
 
       <div class="seek-row">
@@ -117,13 +114,6 @@ console.error('OneSignal init failed', error);
         <div class="now-text">
           <strong id="nowTitle">Loading …</strong>
         </div>
-        <button id="commentsButton" class="icon-btn" type="button" aria-label="Show comments" aria-controls="commentsSheet" aria-expanded="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <span id="commentBadge" class="badge" hidden></span>
-        </button>
-        <button id="fullscreenButton" class="icon-btn" type="button" aria-label="Full screen">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
-        </button>
       </div>
 
       <div class="controls">
@@ -156,17 +146,26 @@ console.error('OneSignal init failed', error);
       <section id="view-library" class="view" aria-labelledby="libraryTitle" hidden>
         <div class="view-title-row">
           <h1 id="libraryTitle" class="view-title">Library</h1>
-          <button id="searchToggle" class="icon-btn search-toggle" type="button" aria-label="Search tracks" aria-expanded="false" aria-controls="searchBox">
-            <svg class="icon-search" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-            <svg class="icon-close" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-          </button>
+          <div class="title-tools">
+            <button id="searchToggle" class="icon-btn" type="button" aria-label="Search tracks" aria-expanded="false" aria-controls="libraryTools">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            </button>
+            <button id="filterToggle" class="icon-btn" type="button" aria-label="Filter by genre" aria-expanded="false" aria-controls="libraryTools">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"/></svg>
+              <span id="filterDot" class="filter-dot" hidden></span>
+            </button>
+          </div>
         </div>
-        <label id="searchBox" class="search" hidden>
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-          <span class="sr-only">Search tracks</span>
-          <input id="searchInput" type="search" placeholder="Search title or keyword …" autocomplete="off" enterkeyhint="search">
-        </label>
-        <div id="genreBar" class="chips" role="group" aria-label="Playlists"></div>
+        <!-- Search field and genre chips: hidden until the magnifier (opens with
+             the keyboard) or the filter (opens without it) is tapped. -->
+        <div id="libraryTools" class="library-tools" hidden>
+          <label class="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <span class="sr-only">Search tracks</span>
+            <input id="searchInput" type="search" placeholder="Search title or keyword …" autocomplete="off" enterkeyhint="search">
+          </label>
+          <div id="genreBar" class="chips" role="group" aria-label="Playlists"></div>
+        </div>
         <div class="section-head"><h2 id="libraryHeading">All tracks</h2><span id="trackCount"></span></div>
         <div id="statusBox" class="status-box" role="status">Loading …</div>
         <ul id="trackList" class="track-list"></ul>
@@ -179,7 +178,7 @@ console.error('OneSignal init failed', error);
         </header>
         <div class="info-actions">
           <a id="infoSubscribe" class="action-btn is-primary" href="https://www.youtube.com/channel/UCCujh8Bdc8hhaMI9CjhF-6w?sub_confirmation=1" target="_blank" rel="noopener">Subscribe<span id="infoSubscriberCount" class="action-count"></span></a>
-          <a id="infoYoutubeLink" class="action-btn" href="https://www.youtube.com/@migflow" target="_blank" rel="noopener">Like / Comment<b aria-hidden="true">↗</b></a>
+          <button id="commentsButton" class="action-btn" type="button" aria-controls="commentsSheet" aria-expanded="false">Comments<span id="commentBadge" class="action-count"></span></button>
         </div>
         <div class="section-head"><h2>Description</h2></div>
         <div class="description">
@@ -217,7 +216,7 @@ console.error('OneSignal init failed', error);
         <div class="row-list">
           <a class="row" href="#legal-notice" data-open-legal="imprint"><span>Legal Notice</span><b aria-hidden="true">›</b></a>
           <a class="row" href="#privacy-policy" data-open-legal="privacy"><span>Privacy Policy</span><b aria-hidden="true">›</b></a>
-          <div class="row"><span>App Version</span><small>2.4.0</small></div>
+          <div class="row"><span>App Version</span><small>2.5.0</small></div>
         </div>
       </section>
     </main>
@@ -364,6 +363,6 @@ Email: <a href="mailto:donmiguel@vodafonemail.de">donmiguel@vodafonemail.de</a><
     </div>
   </dialog>
 
-  <script src="/app.js?v=2.4.0" defer></script>
+  <script src="/app.js?v=2.5.0" defer></script>
 </body>
 </html>

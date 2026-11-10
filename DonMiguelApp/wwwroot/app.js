@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.4.0';
+const APP_VERSION='2.5.0';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -67,7 +67,7 @@ const state={
 const $=s=>document.querySelector(s);
 const els={
   preloader:$('#appPreloader'),preloaderText:$('#preloaderText'),app:$('#app'),content:$('#content'),
-  videoFrame:$('#videoFrame'),exitCinema:$('#exitCinemaButton'),fullscreen:$('#fullscreenButton'),
+  videoFrame:$('#videoFrame'),
   seek:$('#seekBar'),timeCurrent:$('#timeCurrent'),timeTotal:$('#timeTotal'),
   nowTitle:$('#nowTitle'),
   play:$('#playPauseButton'),prev:$('#previousButton'),next:$('#nextButton'),
@@ -76,11 +76,11 @@ const els={
   sheet:$('#commentsSheet'),sheetHead:$('#commentsSheetHead'),comments:$('#comments'),
   commentCount:$('#commentCount'),closeComments:$('#closeComments'),
   poster:$('#heroPoster'),posterImage:$('#heroImage'),
-  infoTitle:$('#infoTitle'),infoMeta:$('#infoMeta'),infoSubscriberCount:$('#infoSubscriberCount'),infoYoutubeLink:$('#infoYoutubeLink'),descriptionText:$('#descriptionText'),
+  infoTitle:$('#infoTitle'),infoMeta:$('#infoMeta'),infoSubscriberCount:$('#infoSubscriberCount'),descriptionText:$('#descriptionText'),
   newsStatus:$('#newsStatus'),newsGrid:$('#newsGrid'),
   postSheet:$('#postSheet'),postSheetHead:$('#postSheetHead'),postDate:$('#postDate'),
   postImage:$('#postImage'),postText:$('#postText'),closePost:$('#closePost'),
-  search:$('#searchInput'),searchBox:$('#searchBox'),searchToggle:$('#searchToggle'),genres:$('#genreBar'),libraryHeading:$('#libraryHeading'),
+  search:$('#searchInput'),libraryTools:$('#libraryTools'),searchToggle:$('#searchToggle'),filterToggle:$('#filterToggle'),filterDot:$('#filterDot'),genres:$('#genreBar'),libraryHeading:$('#libraryHeading'),
   count:$('#trackCount'),status:$('#statusBox'),list:$('#trackList'),
   tabs:[...document.querySelectorAll('.tab[data-view]')],
   views:{
@@ -312,9 +312,6 @@ function renderInfo(video){
   if(video?.duration)parts.push(video.duration);
   els.infoMeta.textContent=parts.join(' · ');
   els.infoSubscriberCount.textContent=state.subscriberCount?formatSubscribers(state.subscriberCount):'';
-  els.infoYoutubeLink.href=video?.id
-    ?`https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}`
-    :'https://www.youtube.com/@migflow';
 
   const text=String(video?.description||'').trim();
   if(text){
@@ -332,6 +329,7 @@ function renderGenres(){
   els.genres.innerHTML=genres.map(g=>`<button class="chip" type="button" data-genre="${esc(g)}" aria-pressed="${g===state.genre}">${esc(g==='All'?'All tracks':g)}</button>`).join('');
   els.genres.querySelectorAll('[data-genre]').forEach(b=>b.onclick=()=>changeGenre(b.dataset.genre));
   els.libraryHeading.textContent=state.genre==='All'?'All tracks':state.genre;
+  updateFilterDot();
 }
 
 async function changeGenre(nextGenre){
@@ -382,22 +380,27 @@ function markCurrentTrack(){
 
 els.search.addEventListener('input',e=>{state.query=e.target.value;applyFilters();});
 
-// The magnifier next to the title opens the search; closing it also clears it,
-// so no filtered list is left behind unnoticed.
-function setSearchOpen(open){
-  els.searchBox.hidden=!open;
-  els.searchToggle.setAttribute('aria-expanded',open?'true':'false');
-  els.searchToggle.setAttribute('aria-label',open?'Close search':'Search tracks');
+// Magnifier and filter next to the title open the same area (search field and
+// genre chips). The magnifier also brings up the keyboard, the filter does not.
+// Closing clears the search text; the chosen genre stays.
+function setToolsOpen(open,withKeyboard){
+  els.libraryTools.hidden=!open;
+  for(const b of [els.searchToggle,els.filterToggle])b.setAttribute('aria-expanded',open?'true':'false');
   if(open){
-    els.search.focus();
-  }else if(state.query){
-    els.search.value='';
-    state.query='';
-    applyFilters();
+    if(withKeyboard)els.search.focus();
+  }else{
+    els.search.blur();
+    if(state.query){els.search.value='';state.query='';applyFilters();}
   }
+  updateFilterDot();
 }
-els.searchToggle.addEventListener('click',()=>setSearchOpen(els.searchBox.hidden));
-els.search.addEventListener('keydown',e=>{if(e.key==='Escape'){setSearchOpen(false);els.searchToggle.focus();}});
+// Small dot on the filter while a genre is chosen and the chips are hidden.
+function updateFilterDot(){
+  if(els.filterDot)els.filterDot.hidden=state.genre==='All'||!els.libraryTools.hidden;
+}
+els.searchToggle.addEventListener('click',()=>setToolsOpen(els.libraryTools.hidden,true));
+els.filterToggle.addEventListener('click',()=>setToolsOpen(els.libraryTools.hidden,false));
+els.search.addEventListener('keydown',e=>{if(e.key==='Escape'){setToolsOpen(false);els.searchToggle.focus();}});
 
 /* ---------- External links (More tab) ---------- */
 
@@ -608,64 +611,13 @@ function loadYouTubeIframeApi(){
 }
 loadYouTubeIframeApi();
 
-/* ---------- Full screen ---------- */
+/* ---------- Full screen ----------
+   No button: turning the phone sideways makes the video fill the screen
+   (see the landscape rule in styles.css). */
 
-function fullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement||null;}
-// Phone held upright in full screen: turn the picture 90° so the video
-// fills the screen sideways. iPhone browsers never allow apps to rotate the
-// screen and some Android browsers refuse it, so this covers both.
-const portraitQuery=window.matchMedia('(orientation: portrait)');
-function isFullscreenActive(){return !!fullscreenElement()||document.body.classList.contains('cinema');}
-function updateRotation(){
-  els.videoFrame.classList.toggle('rotate',isFullscreenActive()&&portraitQuery.matches);
-}
-if(portraitQuery.addEventListener)portraitQuery.addEventListener('change',updateRotation);
-else if(portraitQuery.addListener)portraitQuery.addListener(updateRotation);
-
-function enterCinema(){
-  document.body.classList.add('cinema');
-  els.exitCinema.hidden=false;
-  updateRotation();
-}
-function leaveFullscreen(){
-  if(fullscreenElement()){
-    const exit=document.exitFullscreen||document.webkitExitFullscreen;
-    try{exit?.call(document);}catch{}
-  }
-  document.body.classList.remove('cinema');
-  els.exitCinema.hidden=true;
-  updateRotation();
-}
-function enterFullscreen(){
-  const frame=els.videoFrame;
-  const request=frame.requestFullscreen||frame.webkitRequestFullscreen;
-  if(!request){enterCinema();return;}
-  try{
-    const result=request.call(frame);
-    if(result&&typeof result.catch==='function')result.catch(enterCinema);
-  }catch{
-    enterCinema();
-  }
-}
-async function onFullscreenChange(){
-  els.exitCinema.hidden=!isFullscreenActive();
-  if(fullscreenElement()){
-    // Ask for landscape first (works on many Android phones) ...
-    try{await screen.orientation?.lock?.('landscape');}catch{}
-  }else{
-    try{screen.orientation?.unlock?.();}catch{}
-  }
-  // ... and rotate the picture ourselves if the phone is still upright.
-  updateRotation();
-}
-els.fullscreen.addEventListener('click',enterFullscreen);
-els.exitCinema.addEventListener('click',leaveFullscreen);
-document.addEventListener('fullscreenchange',onFullscreenChange);
-document.addEventListener('webkitfullscreenchange',onFullscreenChange);
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
-  if(document.body.classList.contains('cinema'))leaveFullscreen();
-  else if(!els.postSheet.hidden)closePost();
+  if(!els.postSheet.hidden)closePost();
   else if(!els.sheet.hidden)closeComments();
 });
 
@@ -673,9 +625,7 @@ document.addEventListener('keydown',e=>{
 
 function updateCommentBadge(video){
   const n=Number(video?.commentCount)||0;
-  els.commentBadge.hidden=n<=0;
-  els.commentBadge.textContent=n>99?'99+':String(n);
-  els.commentsButton.setAttribute('aria-label',n>0?`Show comments (${n})`:'Show comments');
+  els.commentBadge.textContent=n>0?compact(n):'';
 }
 
 function openComments(){

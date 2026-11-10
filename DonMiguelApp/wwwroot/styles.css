@@ -122,8 +122,6 @@ a{color:var(--text)}
 .poster{position:absolute;inset:0;z-index:2;width:100%;height:100%;padding:0;border:0;overflow:hidden;background:#0d0d0d;cursor:pointer;display:block}
 .poster-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
-.exit-cinema{position:absolute;z-index:3;top:calc(10px + var(--safe-top));right:calc(10px + env(safe-area-inset-right,0px));width:44px;height:44px;border:0;border-radius:22px;background:rgba(0,0,0,.62);color:#fff;display:flex;align-items:center;justify-content:center;padding:0}
-.exit-cinema svg{width:22px;height:22px}
 
 .seek-row{display:flex;align-items:center;gap:10px;padding:6px 16px 0;font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .seek-row span{min-width:34px}
@@ -135,7 +133,7 @@ a{color:var(--text)}
 #seekBar::-moz-range-progress{height:4px;border-radius:2px;background:var(--accent-hi)}
 #seekBar::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--text)}
 
-.now-row{display:flex;align-items:center;gap:2px;padding:0 8px 0 16px}
+.now-row{display:flex;align-items:center;min-height:44px;padding:0 16px}
 .now-text{flex:1;min-width:0}
 .now-text strong{display:block;font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
@@ -185,6 +183,8 @@ a{color:var(--text)}
 .action-btn{min-width:0;height:44px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;border:1px solid var(--line);border-radius:22px;background:transparent;color:var(--text);text-decoration:none;font-size:.9rem;font-weight:700;white-space:nowrap}
 .action-btn b{font-weight:400;color:var(--muted)}
 .action-btn:active{background:var(--press)}
+button.action-btn{font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
+.action-btn[aria-expanded="true"]{border-color:var(--accent-hi);color:var(--accent-hi)}
 .action-btn.is-primary{border-color:var(--accent);background:var(--accent);color:#fff}
 .action-btn.is-primary:active{background:var(--accent-press)}
 .action-count{font-weight:500;opacity:.85}
@@ -194,10 +194,10 @@ a{color:var(--text)}
 /* Library */
 .view-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
 .view-title-row .view-title{margin-bottom:0}
-.search-toggle{margin-right:-8px}
-.search-toggle .icon-close{display:none}
-.search-toggle[aria-expanded="true"] .icon-search{display:none}
-.search-toggle[aria-expanded="true"] .icon-close{display:block}
+.title-tools{display:flex;gap:2px;margin-right:-8px}
+.library-tools[hidden]{display:none}
+.filter-dot{position:absolute;top:9px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--accent-hi)}
+.filter-dot[hidden]{display:none}
 .search{display:flex;align-items:center;gap:10px;height:46px;margin-bottom:2px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--muted)}
 .search:focus-within{border-color:var(--line-strong)}
 .search svg{flex:0 0 auto;width:18px;height:18px}
@@ -318,14 +318,6 @@ a.row:active,button.row:active{background:var(--press)}
 .legal-dialog-content .updated,.legal-dialog-content .note{font-size:.82rem;color:var(--muted)}
 
 /* ---------- Full screen ---------- */
-.video-frame:fullscreen{width:100%;height:100%;aspect-ratio:auto;min-height:0}
-.video-frame:-webkit-full-screen{width:100%;height:100%;aspect-ratio:auto;min-height:0}
-/* Fallback where the browser has no Fullscreen API for this element (iPhone):
-   the stage fills the whole screen inside the app. */
-body.cinema .video-frame{position:fixed;inset:0;z-index:100;width:100vw;height:100vh;height:100dvh;aspect-ratio:auto;min-height:0}
-/* Full screen with the phone held upright: picture turned 90°, filling the screen. */
-.video-frame.rotate > #youtubePlayer,.video-frame.rotate > .poster{position:absolute;top:50%;left:50%;right:auto;bottom:auto;width:100vh;width:100dvh;height:100vw;transform:translate(-50%,-50%) rotate(90deg)}
-.video-frame.rotate > .exit-cinema{top:auto;bottom:calc(10px + var(--safe-bottom));transform:rotate(90deg)}
 /* Phone turned sideways: the video takes the whole screen, like the YouTube app. */
 @media (orientation:landscape) and (max-height:520px){
   .video-frame{position:fixed;inset:0;z-index:100;width:100vw;height:100vh;height:100dvh;aspect-ratio:auto;min-height:0}
