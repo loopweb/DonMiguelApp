@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.7.1';
+const APP_VERSION='2.7.2';
 
 // The main playlists, always shown first and in this order. All other public
 // playlists of the channel are added behind them automatically (newest first).
@@ -11,7 +11,7 @@ const PLAYLISTS = {
   'Salsa': 'PLrIIvPdks_sGtYNQcxPbsCxeyO9KuNWHy',
   'Reggaetón': 'PLrIIvPdks_sFLTemRJ-MHS-k-2egExpwv',
   'Ballads': 'PLrIIvPdks_sET8awM4mOlB2o9jHtAIvxP',
-  'Mixtape': 'PLrIIvPdks_sEDekjQX9uG8TGbPbDF4mTe'
+  '► Mixtape': 'PLrIIvPdks_sEDekjQX9uG8TGbPbDF4mTe'
 };
 
 const linkGroups={
@@ -47,10 +47,19 @@ const genres=Object.keys(PLAYLISTS);
 const GENRE_LABELS=['Bachata','Merengue','Salsa','Reggaetón','Ballads'];
 const playlistMeta=new Map(); // playlist id -> {thumbnail,itemCount}
 
-// Button name from the YouTube playlist title, without a leading artist name.
+// Shorter names for some playlists (matched on part of the YouTube title).
+const PLAYLIST_RENAMES=[
+  [/frecuencia\s+latina/i,'► Frecuencia Latina'],
+  [/éxitos\s+latinos\s+en\s+vivo/i,'► En Vivo'],
+  [/don\s+miguel['’`]?s\s+selection/i,'► Miguel’s Selection'],
+  [/house,?\s*club\s*(&|and|\+)\s*techno/i,'► Club Tracks']
+];
+
+// Tile name from the YouTube playlist title, without a leading artist name.
 function playlistLabel(title){
   const raw=String(title||'').trim();
-  const short=raw.replace(/^don\s+miguel(\s+de\s+cabarete)?\s*[-–—|:·]*\s*/i,'').trim();
+  for(const [pattern,name] of PLAYLIST_RENAMES)if(pattern.test(raw))return name;
+  const short=raw.replace(/^don\s+miguel\s+de\s+cabarete\s*[-–—|:·]+\s*/i,'').trim();
   return short||raw;
 }
 
@@ -429,6 +438,8 @@ function updateHeading(){
   els.libraryHeading.textContent=searching?'Search results':(state.genre==='All'?'All tracks':state.genre);
   // The ✕ next to a chosen playlist leads back to all tracks.
   els.clearGenre.hidden=searching||state.genre==='All';
+  // With a playlist chosen, the ✕ takes the place of the track count.
+  els.count.hidden=!els.clearGenre.hidden;
 }
 
 function applyFilters(){
