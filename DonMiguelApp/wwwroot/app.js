@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.7.2';
+const APP_VERSION='2.7.3';
 
 // The main playlists, always shown first and in this order. All other public
 // playlists of the channel are added behind them automatically (newest first).
@@ -44,7 +44,7 @@ const linkGroups={
 const genres=Object.keys(PLAYLISTS);
 // Shown under "Genres" in the playlist overview; everything else (Mixtape
 // first, then the other public playlists) goes under "More playlists".
-const GENRE_LABELS=['Bachata','Merengue','Salsa','Reggaetón','Ballads'];
+const GENRE_LABELS=['Bachata','Merengue','Salsa','Reggaetón','Ballads','Latin House'];
 const playlistMeta=new Map(); // playlist id -> {thumbnail,itemCount}
 
 // Shorter names for some playlists (matched on part of the YouTube title).
@@ -52,7 +52,7 @@ const PLAYLIST_RENAMES=[
   [/frecuencia\s+latina/i,'► Frecuencia Latina'],
   [/éxitos\s+latinos\s+en\s+vivo/i,'► En Vivo'],
   [/don\s+miguel['’`]?s\s+selection/i,'► Miguel’s Selection'],
-  [/house,?\s*club\s*(&|and|\+)\s*techno/i,'► Club Tracks']
+  [/house,?\s*club\s*(&|and|\+)\s*techno/i,'Latin House']
 ];
 
 // Tile name from the YouTube playlist title, without a leading artist name.
