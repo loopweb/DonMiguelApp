@@ -16,7 +16,8 @@ public sealed record PlaylistItem(
     string Title,
     string Description,
     string Thumbnail,
-    int ItemCount);
+    int ItemCount,
+    DateTimeOffset PublishedAt = default);
 
 public sealed record ChannelInfo(
     string Id,

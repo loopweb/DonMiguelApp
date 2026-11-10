@@ -212,22 +212,44 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
         return await RemoveYouTubeShortsAsync(videos, detailsMap, ct);
     }
 
+    // The channel's public playlists (the app turns them into genre buttons).
+    // Kept for 6 hours, so opening the app does not cost API quota every time.
+    private static IReadOnlyList<PlaylistItem>? s_playlists;
+    private static DateTimeOffset s_playlistsUntil;
+
     public async Task<IReadOnlyList<PlaylistItem>> GetPlaylistsAsync(CancellationToken ct)
     {
         EnsureConfigured();
+        if (s_playlists is not null && DateTimeOffset.UtcNow < s_playlistsUntil) return s_playlists;
+
         var channel = await GetChannelAsync(ct) ?? throw new InvalidOperationException("YouTube-Kanal wurde nicht gefunden.");
-        var url = $"https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId={Uri.EscapeDataString(channel.Id)}&maxResults=50&key={Uri.EscapeDataString(_apiKey)}";
-        using var doc = await GetJsonAsync(url, ct);
-        return doc.RootElement.GetProperty("items").EnumerateArray().Select(x =>
+        var result = new List<PlaylistItem>();
+        string? pageToken = null;
+        do
         {
-            var snippet = x.GetProperty("snippet");
-            return new PlaylistItem(
-                x.GetProperty("id").GetString() ?? "",
-                snippet.GetProperty("title").GetString() ?? "",
-                snippet.TryGetProperty("description", out var d) ? d.GetString() ?? "" : "",
-                BestThumbnail(snippet.GetProperty("thumbnails")),
-                x.GetProperty("contentDetails").GetProperty("itemCount").GetInt32());
-        }).ToArray();
+            var tokenPart = string.IsNullOrWhiteSpace(pageToken) ? "" : $"&pageToken={Uri.EscapeDataString(pageToken)}";
+            var url = $"https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId={Uri.EscapeDataString(channel.Id)}&maxResults=50{tokenPart}&key={Uri.EscapeDataString(_apiKey)}";
+            using var doc = await GetJsonAsync(url, ct);
+            foreach (var x in doc.RootElement.GetProperty("items").EnumerateArray())
+            {
+                var snippet = x.GetProperty("snippet");
+                var published = snippet.TryGetProperty("publishedAt", out var p) &&
+                                p.ValueKind == JsonValueKind.String &&
+                                DateTimeOffset.TryParse(p.GetString(), out var date) ? date : default;
+                result.Add(new PlaylistItem(
+                    x.GetProperty("id").GetString() ?? "",
+                    snippet.GetProperty("title").GetString() ?? "",
+                    snippet.TryGetProperty("description", out var d) ? d.GetString() ?? "" : "",
+                    snippet.TryGetProperty("thumbnails", out var t) ? BestThumbnail(t) : "",
+                    x.GetProperty("contentDetails").GetProperty("itemCount").GetInt32(),
+                    published));
+            }
+            pageToken = doc.RootElement.TryGetProperty("nextPageToken", out var next) ? next.GetString() : null;
+        } while (!string.IsNullOrWhiteSpace(pageToken) && result.Count < 200);
+
+        s_playlists = result.ToArray();
+        s_playlistsUntil = DateTimeOffset.UtcNow.AddHours(6);
+        return s_playlists;
     }
 
     public async Task<IReadOnlyList<CommentItem>> GetCommentsAsync(string videoId, CancellationToken ct)

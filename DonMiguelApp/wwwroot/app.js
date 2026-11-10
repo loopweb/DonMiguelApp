@@ -1,8 +1,10 @@
 'use strict';
 
-const APP_VERSION='2.5.2';
+const APP_VERSION='2.6.1';
 
-const PLAYLISTS = Object.freeze({
+// The main playlists, always shown first and in this order. All other public
+// playlists of the channel are added behind them automatically (newest first).
+const PLAYLISTS = {
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
   'Bachata': 'PLrIIvPdks_sHnjrKxo9AyXzQThQFQb4fg',
   'Merengue': 'PLrIIvPdks_sHfOHEPyeO85eLAnro2g_Wv',
@@ -10,7 +12,7 @@ const PLAYLISTS = Object.freeze({
   'Reggaetón': 'PLrIIvPdks_sFLTemRJ-MHS-k-2egExpwv',
   'Ballads': 'PLrIIvPdks_sET8awM4mOlB2o9jHtAIvxP',
   'Mixtape': 'PLrIIvPdks_sEDekjQX9uG8TGbPbDF4mTe'
-});
+};
 
 const linkGroups={
   music:[
@@ -41,10 +43,50 @@ const linkGroups={
 
 const genres=Object.keys(PLAYLISTS);
 
+// Button name from the YouTube playlist title, without a leading artist name.
+function playlistLabel(title){
+  const raw=String(title||'').trim();
+  const short=raw.replace(/^don\s+miguel(\s+de\s+cabarete)?\s*[-–—|:·]*\s*/i,'').trim();
+  return short||raw;
+}
+
+// Adds the channel's other public playlists as genre buttons.
+async function loadMorePlaylists(){
+  try{
+    const lists=await fetch('/api/youtube/playlists').then(check);
+    const known=new Set(Object.values(PLAYLISTS));
+    const extra=(Array.isArray(lists)?lists:[])
+      .filter(p=>p?.id&&!known.has(p.id)&&Number(p.itemCount)>0)
+      .sort((a,b)=>new Date(b.publishedAt||0)-new Date(a.publishedAt||0));
+    for(const p of extra){
+      let label=playlistLabel(p.title);
+      for(let n=2;PLAYLISTS[label];n++)label=`${playlistLabel(p.title)} (${n})`;
+      PLAYLISTS[label]=p.id;
+      genres.push(label);
+    }
+    if(extra.length)renderGenres();
+  }catch{
+    // Not critical: the main playlists keep working.
+  }
+}
+
+// All uploads of the channel, used by the search. Loaded once, on first search.
+let uploadsPromise=null;
+function loadUploads(){
+  if(!uploadsPromise){
+    uploadsPromise=fetch('/api/youtube/videos').then(check).then(list=>{
+      state.uploads=unique(Array.isArray(list)?list:[]);
+      if(state.query.trim())applyFilters();
+    }).catch(()=>{uploadsPromise=null;});
+  }
+  return uploadsPromise;
+}
+
 const state={
   videos:[],
   filtered:[],
   playlistCache:new Map(),
+  uploads:[],
   selectedId:null,
   genre:'All',
   query:'',
@@ -209,6 +251,7 @@ async function load(){
     state.latestVideo=latest||state.videos[0]||null;
     renderRelease();
     renderGenres();
+    loadMorePlaylists();
     applyFilters();
     els.status.hidden=true;
     const first=state.latestVideo?.id||state.videos[0]?.id;
@@ -235,7 +278,7 @@ function findVideo(id){
     const found=list.find(x=>x.id===id);
     if(found)return found;
   }
-  return null;
+  return state.uploads.find(x=>x.id===id)||null;
 }
 
 /* ---------- Views & tabs ---------- */
@@ -328,7 +371,7 @@ function renderInfo(video){
 function renderGenres(){
   els.genres.innerHTML=genres.map(g=>`<button class="chip" type="button" data-genre="${esc(g)}" aria-pressed="${g===state.genre}">${esc(g==='All'?'All tracks':g)}</button>`).join('');
   els.genres.querySelectorAll('[data-genre]').forEach(b=>b.onclick=()=>changeGenre(b.dataset.genre));
-  els.libraryHeading.textContent=state.genre==='All'?'All tracks':state.genre;
+  updateHeading();
   updateFilterDot();
 }
 
@@ -352,16 +395,26 @@ async function changeGenre(nextGenre){
   }
 }
 
+// While searching, the results come from the whole channel, not the chosen genre.
+function updateHeading(){
+  els.libraryHeading.textContent=state.query.trim()?'Search results':(state.genre==='All'?'All tracks':state.genre);
+}
+
 function applyFilters(){
+  updateHeading();
   const q=state.query.trim().toLocaleLowerCase('en');
-  state.filtered=state.videos.filter(v=>!q||`${v.title} ${v.description}`.toLocaleLowerCase('en').includes(q));
+  // Searching looks through everything: all uploads of the channel plus every
+  // playlist loaded so far, not only the list that is shown.
+  const pool=q?unique([...state.videos,...state.uploads,...[...state.playlistCache.values()].flat()]):state.videos;
+  state.filtered=pool.filter(v=>!q||`${v.title} ${v.description}`.toLocaleLowerCase('en').includes(q));
   renderList();
 }
 
 function renderList(){
   els.count.textContent=`${state.filtered.length} ${state.filtered.length===1?'track':'tracks'}`;
   if(!state.filtered.length){
-    els.list.innerHTML=state.videos.length?'<li class="status-box">No matching tracks found.</li>':'';
+    const searching=state.query.trim()&&uploadsPromise&&!state.uploads.length;
+    els.list.innerHTML=state.videos.length?`<li class="status-box">${searching?'Searching …':'No matching tracks found.'}</li>`:'';
     return;
   }
   // Two covers per row, like the news tiles. The title is always written
@@ -378,7 +431,7 @@ function markCurrentTrack(){
   });
 }
 
-els.search.addEventListener('input',e=>{state.query=e.target.value;applyFilters();});
+els.search.addEventListener('input',e=>{state.query=e.target.value;loadUploads();applyFilters();});
 
 // Magnifier and filter next to the title open the same area (search field and
 // genre chips). The magnifier also brings up the keyboard, the filter does not.
@@ -387,7 +440,7 @@ function setToolsOpen(open,withKeyboard){
   els.libraryTools.hidden=!open;
   for(const b of [els.searchToggle,els.filterToggle])b.setAttribute('aria-expanded',open?'true':'false');
   if(open){
-    if(withKeyboard)els.search.focus();
+    if(withKeyboard){els.search.focus();loadUploads();}
   }else{
     els.search.blur();
     if(state.query){els.search.value='';state.query='';applyFilters();}
