@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.7.3';
+const APP_VERSION='2.7.4';
 
 // The main playlists, always shown first and in this order. All other public
 // playlists of the channel are added behind them automatically (newest first).
@@ -1012,12 +1012,43 @@ function safeReloadForUpdate(){
   window.location.replace(`/?updated=${encodeURIComponent(APP_VERSION)}&t=${Date.now()}`);
 }
 
+// Safety net: if the server reports a newer version but the normal update has
+// not taken over after a while, the app removes its own stored files and
+// service worker and loads fresh from the server. Only once per new version
+// (no loops), never while music plays. Push sign-up (its own worker under
+// /push/) and saved settings stay untouched.
+const HARD_RESET_KEY='dmc-hard-reset';
+let hardResetTimer=null;
+function scheduleHardReset(serverVersion){
+  if(hardResetTimer)return;
+  try{if(localStorage.getItem(HARD_RESET_KEY)===serverVersion)return;}catch{return;}
+  hardResetTimer=setTimeout(()=>hardReset(serverVersion),12000);
+}
+async function hardReset(serverVersion){
+  if(state.playing){hardResetTimer=setTimeout(()=>hardReset(serverVersion),15000);return;}
+  try{localStorage.setItem(HARD_RESET_KEY,serverVersion);}catch{return;}
+  try{
+    const registrations=await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations
+      .filter(r=>!new URL(r.scope).pathname.startsWith('/push/'))
+      .map(r=>r.unregister()));
+  }catch{}
+  try{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(k=>k.startsWith('donmiguel-')).map(k=>caches.delete(k)));
+  }catch{}
+  window.location.replace(`/?reset=${encodeURIComponent(serverVersion)}&t=${Date.now()}`);
+}
+
 async function checkPwaUpdate(registration){
   try{
     const response=await fetch(`/api/app-version?t=${Date.now()}`,{cache:'no-store'});
     if(response.ok){
       const data=await response.json();
-      if(data?.version&&data.version!==APP_VERSION)await registration.update();
+      if(data?.version&&data.version!==APP_VERSION){
+        await registration.update();
+        scheduleHardReset(data.version);
+      }
     }
   }catch{}
   try{
