@@ -8,9 +8,8 @@
   <script>
     // Apply the saved appearance before anything is painted (no flash).
     (function(){
-      var mode='dark';
-      try{mode=localStorage.getItem('dmc-theme')||'dark';}catch(e){}
-      var light=mode==='light'||(mode==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches);
+      var light=false;
+      try{light=localStorage.getItem('dmc-theme')==='light';}catch(e){}
       document.documentElement.dataset.theme=light?'light':'dark';
       var meta=document.getElementById('themeColorMeta');
       if(meta)meta.content=light?'#ffffff':'#050505';
@@ -18,7 +17,7 @@
   </script>
   <link rel="preload" as="image" href="/assets/dmc-mark.png">
   <meta name="description" content="Official app of Don Miguel de Cabarete">
-  <link rel="stylesheet" href="/styles.css?v=2.1.1">
+  <link rel="stylesheet" href="/styles.css?v=2.1.2">
   <title>Don Miguel de Cabarete</title>
 
   <link rel="manifest" href="/manifest.webmanifest">
@@ -191,7 +190,6 @@ console.error('OneSignal init failed', error);
             <div id="themeControl" class="segmented" role="group" aria-labelledby="themeLabel">
               <button type="button" data-theme-choice="dark" aria-pressed="true">Dark</button>
               <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
-              <button type="button" data-theme-choice="auto" aria-pressed="false">Auto</button>
             </div>
           </div>
         </div>
@@ -210,7 +208,7 @@ console.error('OneSignal init failed', error);
           <a class="row" href="#privacy-policy" data-open-legal="privacy"><span>Privacy Policy</span><b aria-hidden="true">›</b></a>
           <a class="row" href="https://www.youtube.com/t/terms" target="_blank" rel="noopener"><span>YouTube Terms of Service</span><b aria-hidden="true">↗</b></a>
           <a class="row" href="https://policies.google.com/privacy" target="_blank" rel="noopener"><span>Google Privacy Policy</span><b aria-hidden="true">↗</b></a>
-          <div class="row"><span>App Version</span><small>2.1.1</small></div>
+          <div class="row"><span>App Version</span><small>2.1.2</small></div>
         </div>
       </section>
     </main>
@@ -356,6 +354,6 @@ Email: <a href="mailto:donmiguel@vodafonemail.de">donmiguel@vodafonemail.de</a><
     </div>
   </dialog>
 
-  <script src="/app.js?v=2.1.1" defer></script>
+  <script src="/app.js?v=2.1.2" defer></script>
 </body>
 </html>

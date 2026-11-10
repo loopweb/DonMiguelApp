@@ -28,7 +28,12 @@ builder.Services.AddHttpClient("CommunityPosts", client =>
     client.Timeout = TimeSpan.FromSeconds(20);
     client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
     client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en-US,en;q=0.9");
-});
+    // Without this, YouTube answers requests from European servers with its
+    // cookie-consent page instead of the channel page.
+    client.DefaultRequestHeaders.Add("Cookie", "SOCS=CAI; CONSENT=YES+cb");
+})
+// Send exactly the cookie header above (no automatic cookie handling).
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { UseCookies = false });
 
 builder.Services.AddSingleton<CommunityPostsService>(sp => new CommunityPostsService(
     sp.GetRequiredService<IHttpClientFactory>().CreateClient("CommunityPosts"),
@@ -71,6 +76,15 @@ app.MapGet("/api/youtube/community/latest", async (CommunityPostsService posts, 
 // The newest community posts (up to six), newest first. Empty list if none.
 app.MapGet("/api/youtube/community/posts", async (CommunityPostsService posts, CancellationToken ct) =>
     Results.Ok(await posts.GetRecentAsync(ct)));
+
+// Troubleshooting: what happened when the server last read the YouTube posts page.
+// "?refresh=1" reads the page again right away (at most once a minute).
+app.MapGet("/api/youtube/community/status", async (HttpContext context, CommunityPostsService posts, CancellationToken ct) =>
+{
+    if (context.Request.Query.ContainsKey("refresh")) await posts.GetRecentAsync(true, ct);
+    context.Response.Headers.CacheControl = "no-store";
+    return Results.Ok(posts.GetStatus());
+});
 
 app.MapGet("/api/status", (YouTubeService yt, IConfiguration cfg) => Results.Ok(new
 {
@@ -118,7 +132,7 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
 app.MapGet("/api/app-version", (HttpContext context) =>
 {
     context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-    return Results.Ok(new { version = "2.1.1" });
+    return Results.Ok(new { version = "2.1.2" });
 });
 
 

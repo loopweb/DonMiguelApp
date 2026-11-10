@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.1.1';
+const APP_VERSION='2.1.2';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -864,18 +864,15 @@ function closePost(){
 els.closePost.addEventListener('click',closePost);
 setupSheetSwipe(els.postSheetHead,closePost);
 
-/* ---------- Appearance: dark, light or automatic ---------- */
+/* ---------- Appearance: dark (default) or light ---------- */
 
 const THEME_KEY='dmc-theme';
-const lightQuery=window.matchMedia('(prefers-color-scheme: light)');
 function savedTheme(){
-  try{
-    const value=localStorage.getItem(THEME_KEY);
-    return value==='light'||value==='auto'?value:'dark';
-  }catch{return'dark';}
+  try{return localStorage.getItem(THEME_KEY)==='light'?'light':'dark';}
+  catch{return'dark';}
 }
 function applyTheme(mode){
-  const light=mode==='light'||(mode==='auto'&&lightQuery.matches);
+  const light=mode==='light';
   document.documentElement.dataset.theme=light?'light':'dark';
   const meta=$('#themeColorMeta');
   if(meta)meta.content=light?'#ffffff':'#050505';
@@ -884,14 +881,10 @@ function applyTheme(mode){
   });
 }
 document.querySelectorAll('[data-theme-choice]').forEach(button=>button.addEventListener('click',()=>{
-  const mode=button.dataset.themeChoice;
+  const mode=button.dataset.themeChoice==='light'?'light':'dark';
   try{localStorage.setItem(THEME_KEY,mode);}catch{}
   applyTheme(mode);
 }));
-// "Auto" follows the phone when it switches between light and dark.
-const onSystemThemeChange=()=>{if(savedTheme()==='auto')applyTheme('auto');};
-if(lightQuery.addEventListener)lightQuery.addEventListener('change',onSystemThemeChange);
-else if(lightQuery.addListener)lightQuery.addListener(onSystemThemeChange);
 applyTheme(savedTheme());
 
 /* ---------- PWA updates ---------- */

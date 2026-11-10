@@ -17,6 +17,8 @@ public sealed class CommunityPostsService
     private DateTimeOffset _nextCheck = DateTimeOffset.MinValue;
     private const string PostsUrl = "https://www.youtube.com/@migflow/posts";
     private const int MaxPosts = 6;
+    private readonly object _statusLock = new();
+    private CommunityStatus _status = new(null, false, "No attempt yet", null, null, 0, false, false, 0, 0, null);
 
     public CommunityPostsService(HttpClient http, ILogger<CommunityPostsService> logger)
     {
@@ -31,31 +33,63 @@ public sealed class CommunityPostsService
     }
 
     // The newest posts of the channel, newest first (at most six).
-    public async Task<IReadOnlyList<CommunityPost>> GetRecentAsync(CancellationToken ct)
+    public Task<IReadOnlyList<CommunityPost>> GetRecentAsync(CancellationToken ct) => GetRecentAsync(false, ct);
+
+    // What happened at the last attempt to read the YouTube page (for troubleshooting).
+    public CommunityStatus GetStatus()
     {
-        if (DateTimeOffset.UtcNow < _nextCheck) return _lastGood;
+        lock (_statusLock) return _status with { PostsInMemory = _lastGood.Count, NextCheck = _nextCheck };
+    }
+
+    // force: read the page again now (at most once a minute), used by the status page.
+    public async Task<IReadOnlyList<CommunityPost>> GetRecentAsync(bool force, CancellationToken ct)
+    {
+        bool Due() => DateTimeOffset.UtcNow >= _nextCheck ||
+                      (force && DateTimeOffset.UtcNow - (GetStatus().Attempted ?? DateTimeOffset.MinValue) > TimeSpan.FromMinutes(1));
+        if (!Due()) return _lastGood;
         await _lock.WaitAsync(ct);
         try
         {
-            if (DateTimeOffset.UtcNow < _nextCheck) return _lastGood;
+            if (!Due()) return _lastGood;
+            int? httpStatus = null;
+            string? finalUrl = null;
+            var pageLength = 0;
+            var consentPage = false;
+            var hasInitialData = false;
+            var found = 0;
             try
             {
                 using var response = await _http.GetAsync(PostsUrl + "?hl=en", ct);
+                httpStatus = (int)response.StatusCode;
+                var final = response.RequestMessage?.RequestUri;
+                finalUrl = final is null ? null : final.Host + final.AbsolutePath;
                 response.EnsureSuccessStatusCode();
                 var html = await response.Content.ReadAsStringAsync(ct);
+                pageLength = html.Length;
+                consentPage = (final?.Host.Contains("consent.", StringComparison.OrdinalIgnoreCase) ?? false) ||
+                              html.Contains("consent.youtube.com", StringComparison.OrdinalIgnoreCase);
+                hasInitialData = html.Contains("ytInitialData", StringComparison.Ordinal);
                 var posts = ParsePosts(html, MaxPosts);
+                found = posts.Count;
                 if (posts.Count == 0) throw new InvalidOperationException("No public post found in YouTube page");
                 _lastGood = posts;
                 _nextCheck = DateTimeOffset.UtcNow.AddHours(6);
+                SetStatus(new CommunityStatus(DateTimeOffset.UtcNow, true, null, httpStatus, finalUrl, pageLength, consentPage, hasInitialData, found, found, _nextCheck));
             }
             catch (Exception e)
             {
                 _logger.LogWarning("Community posts could not be refreshed: {Message}", e.Message);
                 _nextCheck = DateTimeOffset.UtcNow.AddMinutes(10); // retry soon after a failure
+                SetStatus(new CommunityStatus(DateTimeOffset.UtcNow, false, e.GetType().Name + ": " + e.Message, httpStatus, finalUrl, pageLength, consentPage, hasInitialData, found, _lastGood.Count, _nextCheck));
             }
             return _lastGood;
         }
         finally { _lock.Release(); }
+    }
+
+    private void SetStatus(CommunityStatus status)
+    {
+        lock (_statusLock) _status = status;
     }
 
     // Reads the posts out of the HTML of the channel's Posts page.
@@ -108,10 +142,10 @@ public sealed class CommunityPostsService
                 var id = FindString(renderer, "postId") ?? FindString(renderer, "postIdText");
                 if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, "^[a-zA-Z0-9_-]+$")) continue;
                 if (posts.Any(p => p.Id == id)) return;
-                var text = ReadText(renderer, "contentText") ?? ReadText(renderer, "content") ?? ReadText(renderer, "contentTextViewModel") ?? "";
-                var image = FindImage(renderer);
-                var runs = ReadPostRuns(renderer);
-                var published = ReadText(renderer, "publishedTimeText");
+                var text = Try(() => ReadText(renderer, "contentText") ?? ReadText(renderer, "content") ?? ReadText(renderer, "contentTextViewModel")) ?? "";
+                var image = Try(() => FindImage(renderer));
+                var runs = Try(() => ReadPostRuns(renderer));
+                var published = Try(() => ReadText(renderer, "publishedTimeText"));
                 posts.Add(new CommunityPost(id, text, image, "https://www.youtube.com/post/" + id, runs, published));
                 // Do not descend into the post itself (it may quote another post).
                 return;
@@ -130,6 +164,13 @@ public sealed class CommunityPostsService
                 if (posts.Count >= max) return;
             }
         }
+    }
+
+    // Optional parts of a post: if YouTube changes one of them, keep the rest.
+    private static T? Try<T>(Func<T?> read) where T : class
+    {
+        try { return read(); }
+        catch { return null; }
     }
 
     private static string? FindString(JsonElement element, string key)
@@ -308,7 +349,7 @@ public sealed class CommunityPostsService
                 {
                     if (item.ValueKind != JsonValueKind.Object ||
                         !item.TryGetProperty("url", out var u) || u.ValueKind != JsonValueKind.String) continue;
-                    var width = item.TryGetProperty("width", out var w) && w.TryGetInt32(out var parsedWidth) ? parsedWidth : 0;
+                    var width = item.TryGetProperty("width", out var w) && w.ValueKind == JsonValueKind.Number && w.TryGetInt32(out var parsedWidth) ? parsedWidth : 0;
                     if (width > 1280) continue;
                     if (width > bestWidth) { bestWidth = width; best = u.GetString(); }
                 }
@@ -333,4 +374,6 @@ public sealed class CommunityPostsService
 }
 
 public record CommunityTextRun(string Text, string? Url);
+public record CommunityStatus(DateTimeOffset? Attempted, bool Ok, string? Error, int? HttpStatus, string? FinalUrl, int PageLength,
+    bool ConsentPage, bool HasInitialData, int PostsFound, int PostsInMemory, DateTimeOffset? NextCheck);
 public record CommunityPost(string Id, string Text, string? ImageUrl, string Url, List<CommunityTextRun>? Runs = null, string? Published = null);
