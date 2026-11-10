@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.1.2';
+const APP_VERSION='2.1.3';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',

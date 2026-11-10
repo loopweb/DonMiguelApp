@@ -12,7 +12,7 @@ public sealed class CommunityPostsService
     private readonly SemaphoreSlim _lock = new(1, 1);
     private IReadOnlyList<CommunityPost> _lastGood = Array.Empty<CommunityPost>();
     // Next time the YouTube page may be read again: 6 h after a success,
-    // but only 10 min after a failed read, so one hiccup (e.g. a cold start)
+    // but only 1 min after a failed read, so one hiccup (e.g. a cold start)
     // no longer hides the news for hours.
     private DateTimeOffset _nextCheck = DateTimeOffset.MinValue;
     private const string PostsUrl = "https://www.youtube.com/@migflow/posts";
@@ -59,12 +59,18 @@ public sealed class CommunityPostsService
             var found = 0;
             try
             {
-                using var response = await _http.GetAsync(PostsUrl + "?hl=en", ct);
+                // The result is shared by all visitors, so reading YouTube must not
+                // depend on the one visitor who happened to trigger it: if that app
+                // is closed or reloads itself (it does after every update), the read
+                // still finishes. It has its own time limit instead.
+                using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+                var readToken = limit.Token;
+                using var response = await _http.GetAsync(PostsUrl + "?hl=en", readToken);
                 httpStatus = (int)response.StatusCode;
                 var final = response.RequestMessage?.RequestUri;
                 finalUrl = final is null ? null : final.Host + final.AbsolutePath;
                 response.EnsureSuccessStatusCode();
-                var html = await response.Content.ReadAsStringAsync(ct);
+                var html = await response.Content.ReadAsStringAsync(readToken);
                 pageLength = html.Length;
                 consentPage = (final?.Host.Contains("consent.", StringComparison.OrdinalIgnoreCase) ?? false) ||
                               html.Contains("consent.youtube.com", StringComparison.OrdinalIgnoreCase);
@@ -79,7 +85,7 @@ public sealed class CommunityPostsService
             catch (Exception e)
             {
                 _logger.LogWarning("Community posts could not be refreshed: {Message}", e.Message);
-                _nextCheck = DateTimeOffset.UtcNow.AddMinutes(10); // retry soon after a failure
+                _nextCheck = DateTimeOffset.UtcNow.AddMinutes(1); // retry soon after a failure
                 SetStatus(new CommunityStatus(DateTimeOffset.UtcNow, false, e.GetType().Name + ": " + e.Message, httpStatus, finalUrl, pageLength, consentPage, hasInitialData, found, _lastGood.Count, _nextCheck));
             }
             return _lastGood;
