@@ -79,10 +79,7 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
                 continue;
             }
 
-            var published = snippet.TryGetProperty("publishedAt", out var p) &&
-                            DateTimeOffset.TryParse(p.GetString(), out var dt)
-                ? dt
-                : DateTimeOffset.MinValue;
+            var published = ReleaseDate(item);
 
             return new VideoItem(
                 id,
@@ -140,7 +137,7 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
         {
             var snippet = x.GetProperty("snippet");
             var id = x.GetProperty("contentDetails").GetProperty("videoId").GetString() ?? "";
-            var published = snippet.TryGetProperty("publishedAt", out var p) && DateTimeOffset.TryParse(p.GetString(), out var dt) ? dt : DateTimeOffset.MinValue;
+            var published = ReleaseDate(x);
             var details = detailsMap.GetValueOrDefault(id, new VideoDetails("", 0, 0));
             return new VideoItem(
                 id,
@@ -198,7 +195,7 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
         {
             var snippet = x.GetProperty("snippet");
             var id = x.GetProperty("contentDetails").GetProperty("videoId").GetString() ?? "";
-            var published = snippet.TryGetProperty("publishedAt", out var p) && DateTimeOffset.TryParse(p.GetString(), out var dt) ? dt : DateTimeOffset.MinValue;
+            var published = ReleaseDate(x);
             var details = detailsMap.GetValueOrDefault(id, new VideoDetails("", 0, 0));
             return new VideoItem(
                 id,
@@ -366,6 +363,23 @@ public sealed class YouTubeService(HttpClient http, IConfiguration config, ILogg
             return span.TotalHours >= 1 ? span.ToString(@"h\:mm\:ss", CultureInfo.InvariantCulture) : span.ToString(@"m\:ss", CultureInfo.InvariantCulture);
         }
         catch { return ""; }
+    }
+
+    // The day the video went public on YouTube (its release), not the day it was
+    // uploaded or added to a playlist. Falls back to the playlist date if missing.
+    private static DateTimeOffset ReleaseDate(JsonElement playlistItem)
+    {
+        if (playlistItem.TryGetProperty("contentDetails", out var content) &&
+            content.TryGetProperty("videoPublishedAt", out var released) &&
+            released.ValueKind == JsonValueKind.String &&
+            DateTimeOffset.TryParse(released.GetString(), out var releaseDate))
+            return releaseDate;
+        if (playlistItem.TryGetProperty("snippet", out var snippet) &&
+            snippet.TryGetProperty("publishedAt", out var added) &&
+            added.ValueKind == JsonValueKind.String &&
+            DateTimeOffset.TryParse(added.GetString(), out var addedDate))
+            return addedDate;
+        return DateTimeOffset.MinValue;
     }
 
     private sealed record VideoDetails(string Duration, long ViewCount, double DurationSeconds, long CommentCount = 0);

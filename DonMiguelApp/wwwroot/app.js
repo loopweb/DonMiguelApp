@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.3.1';
+const APP_VERSION='2.4.0';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -366,7 +366,9 @@ function renderList(){
     els.list.innerHTML=state.videos.length?'<li class="status-box">No matching tracks found.</li>':'';
     return;
   }
-  els.list.innerHTML=state.filtered.map(v=>`<li><button class="track${v.id===state.selectedId?' is-current':''}" type="button" data-id="${esc(v.id)}"><img src="${esc(v.thumbnail)}" alt="" loading="lazy"><span class="track-copy"><strong>${esc(displayTitle(v.title))}</strong><small>${esc(relativeDate(v.publishedAt))}</small></span><span class="track-side"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>${esc(v.duration||'')}</span></button></li>`).join('');
+  // Two covers per row, like the news tiles. The title is always written
+  // below the cover, because not every thumbnail carries the song name.
+  els.list.innerHTML=state.filtered.map(v=>`<li><button class="track${v.id===state.selectedId?' is-current':''}" type="button" data-id="${esc(v.id)}"><span class="track-thumb"><img src="${esc(v.thumbnail)}" alt="" loading="lazy">${v.duration?`<span class="track-duration">${esc(v.duration)}</span>`:''}</span><span class="track-copy"><strong>${esc(displayTitle(v.title))}</strong><small><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>${esc(relativeDate(v.publishedAt))}</small></span></button></li>`).join('');
   els.list.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>selectTrack(b.dataset.id,true));
 }
 
