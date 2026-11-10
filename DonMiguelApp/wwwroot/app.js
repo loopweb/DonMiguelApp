@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.1.3';
+const APP_VERSION='2.1.6';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -14,12 +14,14 @@ const PLAYLISTS = Object.freeze({
 
 const linkGroups={
   music:[
+    // Main platform: shown first as a full-width tile.
+    ['YouTube','https://www.youtube.com/@migflow','youtube.svg'],
     ['Spotify','https://open.spotify.com/artist/1ZumwPc08JV7exhNFM63EX','spotify.svg'],
     ['Apple Music','https://music.apple.com/de/artist/don-miguel-de-cabarete/1819273199','applemusic.svg'],
     ['Amazon Music','https://music.amazon.com/artists/B0FBLTZGWF/don-miguel-de-cabarete','amazonmusic.svg'],
     ['YouTube Music','https://music.youtube.com/@migflow','youtubemusic.svg'],
     ['laut.fm','https://laut.fm/don-miguel','laut.svg'],
-    ['YouTube','https://www.youtube.com/@migflow','youtube.svg']
+    ['SoundCloud','https://soundcloud.com/loopweb']
   ],
   official:[
     ['Homepage','https://donmiguel.nicepage.io/','Official website','homepage.svg'],
@@ -31,7 +33,9 @@ const linkGroups={
     ['TikTok','https://www.tiktok.com/@loopweb','tiktok.svg'],
     ['Facebook','https://www.facebook.com/donmiguel.music/','facebook.svg'],
     ['X / Twitter','https://x.com/loopweb','x.svg'],
-    ['Onplug','https://onplug.net/pages/migflow','onplug.svg']
+    ['Onplug','https://onplug.net/pages/migflow','onplug.svg'],
+    ['Telegram','https://t.me/CabareteVibes'],
+    ['Email','mailto:donmiguel@vodafonemail.de']
   ]
 };
 
@@ -72,7 +76,7 @@ const els={
   sheet:$('#commentsSheet'),sheetHead:$('#commentsSheetHead'),comments:$('#comments'),
   commentCount:$('#commentCount'),closeComments:$('#closeComments'),
   poster:$('#heroPoster'),posterImage:$('#heroImage'),
-  descriptionBox:$('#descriptionBox'),descriptionText:$('#descriptionText'),descriptionToggle:$('#descriptionToggle'),
+  descriptionText:$('#descriptionText'),
   newsStatus:$('#newsStatus'),newsGrid:$('#newsGrid'),
   postSheet:$('#postSheet'),postSheetHead:$('#postSheetHead'),postDate:$('#postDate'),
   postImage:$('#postImage'),postText:$('#postText'),closePost:$('#closePost'),
@@ -200,7 +204,6 @@ function setView(name){
   closeComments();
   closePost();
   els.content.scrollTop=0;
-  if(name==='home')requestAnimationFrame(updateDescriptionToggle);
 }
 els.tabs.forEach(tab=>tab.addEventListener('click',()=>{
   if(tab.dataset.view===state.view){els.content.scrollTo({top:0,behavior:'smooth'});return;}
@@ -245,24 +248,10 @@ async function refreshLatestRelease(){
   }catch{/* keep what is shown */}
 }
 
-/* ---------- Home: description of the current track ---------- */
+/* ---------- Home: description of the current track (always in full) ---------- */
 
-function setDescriptionExpanded(expanded){
-  els.descriptionBox.classList.toggle('is-clamped',!expanded);
-  els.descriptionToggle.setAttribute('aria-expanded',expanded?'true':'false');
-  els.descriptionToggle.textContent=expanded?'Show less':'Show more';
-}
-// "Show more" only appears when the text is actually longer than the preview.
-function updateDescriptionToggle(){
-  if(els.views.home.hidden)return;
-  const expanded=els.descriptionToggle.getAttribute('aria-expanded')==='true';
-  if(expanded)return;
-  const text=els.descriptionText;
-  els.descriptionToggle.hidden=text.scrollHeight<=text.clientHeight+2;
-}
 function renderDescription(video){
   const text=String(video?.description||'').trim();
-  setDescriptionExpanded(false);
   if(text){
     renderLinkedText(els.descriptionText,text);
     els.descriptionText.classList.remove('muted');
@@ -270,15 +259,7 @@ function renderDescription(video){
     els.descriptionText.textContent='No description for this track.';
     els.descriptionText.classList.add('muted');
   }
-  els.descriptionToggle.hidden=true;
-  requestAnimationFrame(updateDescriptionToggle);
 }
-els.descriptionToggle.addEventListener('click',()=>{
-  const expanded=els.descriptionToggle.getAttribute('aria-expanded')==='true';
-  setDescriptionExpanded(!expanded);
-  if(expanded)els.content.scrollTo({top:0,behavior:'smooth'});
-});
-window.addEventListener('resize',updateDescriptionToggle);
 
 /* ---------- Library ---------- */
 
@@ -336,13 +317,23 @@ els.search.addEventListener('input',e=>{state.query=e.target.value;applyFilters(
 
 /* ---------- External links (More tab) ---------- */
 
-// Compact text tiles, no logos.
-function textLinkRow(name,url){
-  return `<a class="link-tile" href="${esc(url)}" target="_blank" rel="noopener"><span>${esc(name)}</span><b aria-hidden="true">↗</b></a>`;
+// Compact text tiles, no logos, two per row. A featured link gets a full-width
+// tile at the top; if the rest is an odd number, the last tile is full width
+// too, so every group closes evenly.
+function renderLinkGroup(selector,items,featured){
+  const ordered=featured?[...items.filter(([name])=>name===featured),...items.filter(([name])=>name!==featured)]:items;
+  const hasFeatured=!!featured&&ordered.length>0&&ordered[0][0]===featured;
+  const rest=ordered.length-(hasFeatured?1:0);
+  $(selector).innerHTML=ordered.map(([name,url],index)=>{
+    const wide=(hasFeatured&&index===0)||(rest%2===1&&index===ordered.length-1);
+    // A mail link opens the mail app directly, not a new browser tab.
+    const target=url.startsWith('mailto:')?'':' target="_blank" rel="noopener"';
+    return `<a class="link-tile${wide?' is-wide':''}" href="${esc(url)}"${target}><span>${esc(name)}</span><b aria-hidden="true">↗</b></a>`;
+  }).join('');
 }
-$('#musicLinks').innerHTML=linkGroups.music.map(([name,url])=>textLinkRow(name,url)).join('');
-$('#officialLinks').innerHTML=linkGroups.official.map(([name,url])=>textLinkRow(name,url)).join('');
-$('#socialLinks').innerHTML=linkGroups.social.map(([name,url])=>textLinkRow(name,url)).join('');
+renderLinkGroup('#musicLinks',linkGroups.music,'YouTube');
+renderLinkGroup('#officialLinks',linkGroups.official);
+renderLinkGroup('#socialLinks',linkGroups.social);
 
 /* ---------- Player ---------- */
 
