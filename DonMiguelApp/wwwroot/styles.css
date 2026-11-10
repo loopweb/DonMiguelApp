@@ -199,9 +199,15 @@ button.action-btn{font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
 .library-tools{margin-bottom:14px}
 .heading-wrap{display:flex;align-items:center;gap:4px;min-width:0}
 .heading-wrap h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.clear-genre{flex:0 0 auto;width:30px;height:30px;margin:-4px 0;padding:0;border:0;border-radius:50%;background:transparent;color:var(--accent-hi);display:inline-flex;align-items:center;justify-content:center}
-.clear-genre:active{background:var(--press)}
-.clear-genre svg{width:18px;height:18px}
+.clear-genre{flex:0 0 auto;width:30px;height:30px;margin:-4px 0 -4px 6px;padding:0;border:0;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center}
+.clear-genre:active{background:var(--accent-press)}
+.clear-genre svg{width:15px;height:15px;stroke-width:2.6}
+/* Playlist cards in the overview */
+.track-thumb.pl-card{display:flex;flex-direction:column;justify-content:flex-end;gap:3px;padding:10px 12px;border-color:transparent;color:#fff}
+.playlist-tile.is-genre .pl-card{background:linear-gradient(135deg,#3a8f8a 0%,#24615e 100%)}
+.playlist-tile.is-more .pl-card{background:linear-gradient(135deg,#25534f 0%,#173a37 100%)}
+.track .pl-card strong,.track.is-current .pl-card strong{color:#fff;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:1rem;font-weight:800;line-height:1.2;overflow-wrap:anywhere}
+.pl-card small{font-size:.72rem;font-weight:600;opacity:.8}
 .clear-genre[hidden]{display:none}
 /* Playlist overview in place of the tracks */
 #view-library:not(.is-overview) #playlistGrid{display:none}

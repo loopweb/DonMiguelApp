@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.7.0';
+const APP_VERSION='2.7.1';
 
 // The main playlists, always shown first and in this order. All other public
 // playlists of the channel are added behind them automatically (newest first).
@@ -374,10 +374,12 @@ function renderInfo(video){
 
 /* ---------- Library ---------- */
 
+// Playlist tile: a petrol card with the name written in it (no picture).
 function playlistTile(label){
   const meta=playlistMeta.get(PLAYLISTS[label])||{};
   const count=meta.itemCount?`${meta.itemCount} ${meta.itemCount===1?'track':'tracks'}`:'';
-  return `<li><button class="track playlist-tile${label===state.genre?' is-current':''}" type="button" data-genre="${esc(label)}"><span class="track-thumb">${meta.thumbnail?`<img src="${esc(meta.thumbnail)}" alt="" loading="lazy">`:''}</span><span class="track-copy"><strong>${esc(label)}</strong><small>${esc(count)}</small></span></button></li>`;
+  const kind=GENRE_LABELS.includes(label)?'is-genre':'is-more';
+  return `<li><button class="track playlist-tile ${kind}${label===state.genre?' is-current':''}" type="button" data-genre="${esc(label)}"><span class="track-thumb pl-card"><strong>${esc(label)}</strong>${count?`<small>${esc(count)}</small>`:''}</span></button></li>`;
 }
 function renderGenres(){
   const genreTiles=GENRE_LABELS.filter(g=>PLAYLISTS[g]);
