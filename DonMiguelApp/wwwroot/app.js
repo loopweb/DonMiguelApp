@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.0.7';
+const APP_VERSION='2.1.1';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -72,14 +72,18 @@ const els={
   sheet:$('#commentsSheet'),sheetHead:$('#commentsSheetHead'),comments:$('#comments'),
   commentCount:$('#commentCount'),closeComments:$('#closeComments'),
   poster:$('#heroPoster'),posterImage:$('#heroImage'),
+  descriptionBox:$('#descriptionBox'),descriptionText:$('#descriptionText'),descriptionToggle:$('#descriptionToggle'),
+  newsStatus:$('#newsStatus'),newsGrid:$('#newsGrid'),
+  postSheet:$('#postSheet'),postSheetHead:$('#postSheetHead'),postDate:$('#postDate'),
+  postImage:$('#postImage'),postText:$('#postText'),closePost:$('#closePost'),
   search:$('#searchInput'),genres:$('#genreBar'),libraryHeading:$('#libraryHeading'),
   count:$('#trackCount'),status:$('#statusBox'),list:$('#trackList'),
   tabs:[...document.querySelectorAll('.tab[data-view]')],
   views:{
     home:$('#view-home'),
     library:$('#view-library'),
-    links:$('#view-links'),
-    settings:$('#view-settings')
+    news:$('#view-news'),
+    more:$('#view-more')
   }
 };
 
@@ -116,7 +120,7 @@ function setPreloaderText(text){if(els.preloaderText)els.preloaderText.textConte
 function closePreloader(){
   if(preloaderClosed)return;
   preloaderClosed=true;
-  const delay=Math.max(0,650-(Date.now()-preloaderStartedAt));
+  const delay=Math.max(0,1600-(Date.now()-preloaderStartedAt));
   window.setTimeout(()=>{
     document.body.classList.remove('is-loading');
     els.app?.removeAttribute('aria-hidden');
@@ -169,7 +173,7 @@ async function load(){
   }finally{
     closePreloader();
   }
-  loadCommunityNews();
+  loadNews();
 }
 
 function findVideo(id){
@@ -194,7 +198,9 @@ function setView(name){
     else tab.removeAttribute('aria-current');
   });
   closeComments();
+  closePost();
   els.content.scrollTop=0;
+  if(name==='home')requestAnimationFrame(updateDescriptionToggle);
 }
 els.tabs.forEach(tab=>tab.addEventListener('click',()=>{
   if(tab.dataset.view===state.view){els.content.scrollTo({top:0,behavior:'smooth'});return;}
@@ -238,6 +244,41 @@ async function refreshLatestRelease(){
     renderRelease();
   }catch{/* keep what is shown */}
 }
+
+/* ---------- Home: description of the current track ---------- */
+
+function setDescriptionExpanded(expanded){
+  els.descriptionBox.classList.toggle('is-clamped',!expanded);
+  els.descriptionToggle.setAttribute('aria-expanded',expanded?'true':'false');
+  els.descriptionToggle.textContent=expanded?'Show less':'Show more';
+}
+// "Show more" only appears when the text is actually longer than the preview.
+function updateDescriptionToggle(){
+  if(els.views.home.hidden)return;
+  const expanded=els.descriptionToggle.getAttribute('aria-expanded')==='true';
+  if(expanded)return;
+  const text=els.descriptionText;
+  els.descriptionToggle.hidden=text.scrollHeight<=text.clientHeight+2;
+}
+function renderDescription(video){
+  const text=String(video?.description||'').trim();
+  setDescriptionExpanded(false);
+  if(text){
+    renderLinkedText(els.descriptionText,text);
+    els.descriptionText.classList.remove('muted');
+  }else{
+    els.descriptionText.textContent='No description for this track.';
+    els.descriptionText.classList.add('muted');
+  }
+  els.descriptionToggle.hidden=true;
+  requestAnimationFrame(updateDescriptionToggle);
+}
+els.descriptionToggle.addEventListener('click',()=>{
+  const expanded=els.descriptionToggle.getAttribute('aria-expanded')==='true';
+  setDescriptionExpanded(!expanded);
+  if(expanded)els.content.scrollTo({top:0,behavior:'smooth'});
+});
+window.addEventListener('resize',updateDescriptionToggle);
 
 /* ---------- Library ---------- */
 
@@ -293,7 +334,7 @@ function markCurrentTrack(){
 
 els.search.addEventListener('input',e=>{state.query=e.target.value;applyFilters();});
 
-/* ---------- Links ---------- */
+/* ---------- External links (More tab) ---------- */
 
 // Compact text tiles, no logos.
 function textLinkRow(name,url){
@@ -317,6 +358,7 @@ function selectTrack(id,shouldPlay=true){
   if(v.viewCount)meta.push(`${compact(v.viewCount)} views`);
   els.nowMeta.textContent=meta.join(' · ');
   updateCommentBadge(v);
+  renderDescription(v);
   resetProgress(v.duration);
   markCurrentTrack();
   if(!els.sheet.hidden)loadComments(id);
@@ -550,6 +592,7 @@ document.addEventListener('webkitfullscreenchange',onFullscreenChange);
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
   if(document.body.classList.contains('cinema'))leaveFullscreen();
+  else if(!els.postSheet.hidden)closePost();
   else if(!els.sheet.hidden)closeComments();
 });
 
@@ -564,6 +607,7 @@ function updateCommentBadge(video){
 
 function openComments(){
   if(!state.selectedId)return;
+  closePost();
   els.sheet.hidden=false;
   els.commentsButton.setAttribute('aria-expanded','true');
   loadComments(state.selectedId);
@@ -579,17 +623,18 @@ els.commentsButton.addEventListener('click',()=>{
 });
 els.closeComments.addEventListener('click',()=>{closeComments();els.commentsButton.focus();});
 
-// Swipe down on the sheet header to close it.
-(function setupSheetSwipe(){
+// Swipe down on a sheet header to close it.
+function setupSheetSwipe(head,close){
   let startY=null;
-  els.sheetHead.addEventListener('touchstart',e=>{if(e.touches.length===1)startY=e.touches[0].clientY;},{passive:true});
-  els.sheetHead.addEventListener('touchend',e=>{
+  head.addEventListener('touchstart',e=>{if(e.touches.length===1)startY=e.touches[0].clientY;},{passive:true});
+  head.addEventListener('touchend',e=>{
     if(startY===null)return;
     const dy=(e.changedTouches[0]?.clientY??startY)-startY;
     startY=null;
-    if(dy>50)closeComments();
+    if(dy>50)close();
   },{passive:true});
-})();
+}
+setupSheetSwipe(els.sheetHead,closeComments);
 
 async function loadComments(id){
   state.commentsFor=id;
@@ -627,7 +672,7 @@ async function refreshVisibleContent(){
     renderGenres();
     applyFilters();
     els.status.hidden=true;
-    loadCommunityNews();
+    loadNews();
     return true;
   }catch(e){
     els.status.textContent=e.message||'Refresh failed.';
@@ -639,23 +684,18 @@ async function refreshVisibleContent(){
 }
 
 function setupPullToRefresh(){
-  const indicator=$('#pullRefreshIndicator');
+  // The indicator is a dot in the top right corner of the header: faint while
+  // pulling, solid once the pull is far enough, blinking while content loads.
+  const dot=$('#pullRefreshIndicator');
   const scroller=els.content;
-  if(!indicator||!scroller)return;
-  const arrow=indicator.querySelector('.pull-refresh-arrow');
+  if(!dot||!scroller)return;
   const threshold=74;
   let startY=0,distance=0,tracking=false;
 
-  function resetIndicator(delay=0){
-    setTimeout(()=>{
-      indicator.classList.remove('visible','ready','refreshing');
-      indicator.style.setProperty('--pull-distance','0px');
-      arrow.textContent='↓';
-    },delay);
-  }
+  function hideDot(){dot.classList.remove('visible','ready','refreshing');}
 
   scroller.addEventListener('touchstart',e=>{
-    if(pullRefreshBusy||scroller.scrollTop>0||e.touches.length!==1||!els.sheet.hidden)return;
+    if(pullRefreshBusy||scroller.scrollTop>0||e.touches.length!==1||!els.sheet.hidden||!els.postSheet.hidden)return;
     startY=e.touches[0].clientY;
     distance=0;
     tracking=true;
@@ -666,41 +706,36 @@ function setupPullToRefresh(){
     const delta=e.touches[0].clientY-startY;
     if(delta<=0||scroller.scrollTop>0){
       distance=0;
-      resetIndicator();
+      hideDot();
       return;
     }
     distance=Math.min(110,delta*.55);
     if(distance<8)return;
     e.preventDefault();
-    indicator.classList.add('visible');
-    indicator.style.setProperty('--pull-distance',`${distance}px`);
-    const ready=distance>=threshold;
-    indicator.classList.toggle('ready',ready);
-    arrow.textContent=ready?'↻':'↓';
+    dot.classList.add('visible');
+    dot.classList.toggle('ready',distance>=threshold);
   },{passive:false});
 
   scroller.addEventListener('touchend',async()=>{
     if(!tracking)return;
     tracking=false;
-    if(distance<threshold){resetIndicator();return;}
-    indicator.classList.remove('ready');
-    indicator.classList.add('visible','refreshing');
-    indicator.style.setProperty('--pull-distance','54px');
-    arrow.textContent='↻';
-    const ok=await refreshVisibleContent();
-    arrow.textContent=ok?'✓':'!';
-    resetIndicator(650);
+    if(distance<threshold){hideDot();return;}
     distance=0;
+    dot.classList.remove('ready');
+    dot.classList.add('visible','refreshing');
+    // Blink at least briefly, so a fast refresh is still noticed.
+    await Promise.all([refreshVisibleContent(),new Promise(resolve=>setTimeout(resolve,900))]);
+    hideDot();
   },{passive:true});
 
-  scroller.addEventListener('touchcancel',()=>{tracking=false;distance=0;resetIndicator();},{passive:true});
+  scroller.addEventListener('touchcancel',()=>{tracking=false;distance=0;hideDot();},{passive:true});
 }
 
-/* ---------- Community news (inline on Home) ---------- */
+/* ---------- Community news: the latest posts as tiles ---------- */
 
 // Safely turn visible URLs in YouTube post text into clickable links.
 // Everything else remains a text node (no untrusted HTML injection).
-function renderCommunityNewsText(element,value){
+function renderLinkedText(element,value){
   element.replaceChildren();
   const raw=String(value||'');
   const urlPattern=/(https?:\/\/[^\s<>"'“”]+|www\.[^\s<>"'“”]+)/gi;
@@ -729,10 +764,10 @@ function renderCommunityNewsText(element,value){
 }
 
 // Preserve YouTube's real target URLs, even when the visible text is shortened.
-function renderCommunityNewsRuns(element,post){
+function renderPostText(element,post){
   const runs=post.runs;
   if(!Array.isArray(runs)||!runs.length){
-    renderCommunityNewsText(element,post.text);
+    renderLinkedText(element,post.text);
     return;
   }
   element.replaceChildren();
@@ -747,7 +782,7 @@ function renderCommunityNewsRuns(element,post){
     }catch{target=null;}
     if(!target){
       const span=document.createElement('span');
-      renderCommunityNewsText(span,label);
+      renderLinkedText(span,label);
       element.append(span);
       continue;
     }
@@ -760,58 +795,104 @@ function renderCommunityNewsRuns(element,post){
   }
 }
 
-// The backend refreshes the post at most every six hours.
+// The backend refreshes the posts at most every six hours.
 // If nothing comes back (e.g. the server was just waking up), try again a
 // couple of times and whenever the app is opened again.
+let newsPosts=[];
 let newsLoaded=false;
 let newsRetries=0;
 let newsRetryTimer=null;
 function scheduleNewsRetry(){
   if(newsLoaded||newsRetries>=3||newsRetryTimer)return;
   newsRetries++;
-  newsRetryTimer=setTimeout(()=>{newsRetryTimer=null;loadCommunityNews();},20000*newsRetries);
+  newsRetryTimer=setTimeout(()=>{newsRetryTimer=null;loadNews();},20000*newsRetries);
 }
-async function loadCommunityNews(){
-  const status=$('#communityNewsStatus');
-  const content=$('#newsContent');
-  const imageButton=$('#newsImageButton');
-  const image=$('#communityNewsImage');
-  const text=$('#communityNewsText');
+
+const EMPTY_TILE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+
+function renderNewsGrid(){
+  els.newsGrid.innerHTML=newsPosts.map((post,index)=>{
+    const text=String(post.text||'').trim();
+    // Picture if the post has one, otherwise its first lines, otherwise an icon.
+    const media=post.imageUrl
+      ?`<img src="${esc(post.imageUrl)}" alt="" loading="lazy">`
+      :text
+        ?`<span class="news-tile-excerpt">${esc(text.slice(0,260))}</span>`
+        :`<span class="news-tile-empty">${EMPTY_TILE_ICON}</span>`;
+    const label=text?text.replace(/\s+/g,' ').slice(0,80):'Community post';
+    return `<button class="news-tile" type="button" data-post="${index}" aria-label="Open post: ${esc(label)}"><span class="news-tile-media">${media}</span>${post.published?`<span class="news-tile-date">${esc(post.published)}</span>`:''}</button>`;
+  }).join('');
+  els.newsGrid.querySelectorAll('[data-post]').forEach(tile=>tile.addEventListener('click',()=>openPost(Number(tile.dataset.post))));
+}
+
+async function loadNews(){
   try{
-    const response=await fetch('/api/youtube/community/latest',{cache:'no-store'});
-    if(!response.ok||response.status===204)throw new Error('No current public post available');
-    const post=await response.json();
-    if(!post?.text&&!post?.imageUrl)throw new Error('Post unavailable');
-    if(post.text){renderCommunityNewsRuns(text,post);text.hidden=false;}
-    else text.hidden=true;
-    if(post.imageUrl){image.src=post.imageUrl;imageButton.hidden=false;}
-    else imageButton.hidden=true;
-    // Image left, text right — only when there is both.
-    content.classList.toggle('has-image',!!post.imageUrl&&!!post.text);
-    status.hidden=true;
+    const response=await fetch('/api/youtube/community/posts',{cache:'no-store'});
+    if(!response.ok)throw new Error('Posts unavailable');
+    const posts=await response.json();
+    if(!Array.isArray(posts)||!posts.length)throw new Error('No public posts');
+    newsPosts=posts.slice(0,6);
     newsLoaded=true;
+    renderNewsGrid();
+    els.newsStatus.hidden=true;
   }catch{
     scheduleNewsRetry();
-    if(text.hidden&&imageButton.hidden){
-      status.textContent='No news right now – check back soon.';
-      status.hidden=false;
+    if(!newsPosts.length){
+      els.newsStatus.textContent='No news right now – check back soon.';
+      els.newsStatus.hidden=false;
     }
   }
 }
 
-// Tap the news image to see it full size.
-(function setupNewsImageDialog(){
-  const dialog=$('#imageDialog');
-  const big=$('#imageDialogImage');
-  $('#newsImageButton')?.addEventListener('click',()=>{
-    const src=$('#communityNewsImage')?.src;
-    if(!src||!dialog)return;
-    big.src=src;
-    dialog.showModal();
+function openPost(index){
+  const post=newsPosts[index];
+  if(!post)return;
+  closeComments();
+  els.postDate.textContent=post.published||'';
+  if(post.imageUrl){els.postImage.src=post.imageUrl;els.postImage.hidden=false;}
+  else{els.postImage.removeAttribute('src');els.postImage.hidden=true;}
+  if(String(post.text||'').trim()){renderPostText(els.postText,post);els.postText.hidden=false;}
+  else els.postText.hidden=true;
+  els.postSheet.hidden=false;
+  els.postSheet.querySelector('.sheet-body').scrollTop=0;
+  els.closePost.focus({preventScroll:true});
+}
+function closePost(){
+  if(els.postSheet.hidden)return;
+  els.postSheet.hidden=true;
+}
+els.closePost.addEventListener('click',closePost);
+setupSheetSwipe(els.postSheetHead,closePost);
+
+/* ---------- Appearance: dark, light or automatic ---------- */
+
+const THEME_KEY='dmc-theme';
+const lightQuery=window.matchMedia('(prefers-color-scheme: light)');
+function savedTheme(){
+  try{
+    const value=localStorage.getItem(THEME_KEY);
+    return value==='light'||value==='auto'?value:'dark';
+  }catch{return'dark';}
+}
+function applyTheme(mode){
+  const light=mode==='light'||(mode==='auto'&&lightQuery.matches);
+  document.documentElement.dataset.theme=light?'light':'dark';
+  const meta=$('#themeColorMeta');
+  if(meta)meta.content=light?'#ffffff':'#050505';
+  document.querySelectorAll('[data-theme-choice]').forEach(button=>{
+    button.setAttribute('aria-pressed',button.dataset.themeChoice===mode?'true':'false');
   });
-  $('#closeImageDialog')?.addEventListener('click',()=>dialog.close());
-  dialog?.addEventListener('click',e=>{if(e.target===dialog||e.target===big)dialog.close();});
-})();
+}
+document.querySelectorAll('[data-theme-choice]').forEach(button=>button.addEventListener('click',()=>{
+  const mode=button.dataset.themeChoice;
+  try{localStorage.setItem(THEME_KEY,mode);}catch{}
+  applyTheme(mode);
+}));
+// "Auto" follows the phone when it switches between light and dark.
+const onSystemThemeChange=()=>{if(savedTheme()==='auto')applyTheme('auto');};
+if(lightQuery.addEventListener)lightQuery.addEventListener('change',onSystemThemeChange);
+else if(lightQuery.addListener)lightQuery.addListener(onSystemThemeChange);
+applyTheme(savedTheme());
 
 /* ---------- PWA updates ---------- */
 
@@ -985,7 +1066,7 @@ wakeServer();
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='visible')return;
   wakeServer();
-  if(!newsLoaded){newsRetries=0;loadCommunityNews();}
+  if(!newsLoaded){newsRetries=0;loadNews();}
   setTimeout(refreshLatestRelease,250);
 });
 window.addEventListener('pageshow',()=>setTimeout(refreshLatestRelease,250));

@@ -10,12 +10,13 @@ public sealed class CommunityPostsService
     private readonly HttpClient _http;
     private readonly ILogger<CommunityPostsService> _logger;
     private readonly SemaphoreSlim _lock = new(1, 1);
-    private CommunityPost? _lastGood;
+    private IReadOnlyList<CommunityPost> _lastGood = Array.Empty<CommunityPost>();
     // Next time the YouTube page may be read again: 6 h after a success,
     // but only 10 min after a failed read, so one hiccup (e.g. a cold start)
     // no longer hides the news for hours.
     private DateTimeOffset _nextCheck = DateTimeOffset.MinValue;
     private const string PostsUrl = "https://www.youtube.com/@migflow/posts";
+    private const int MaxPosts = 6;
 
     public CommunityPostsService(HttpClient http, ILogger<CommunityPostsService> logger)
     {
@@ -24,6 +25,13 @@ public sealed class CommunityPostsService
     }
 
     public async Task<CommunityPost?> GetLatestAsync(CancellationToken ct)
+    {
+        var posts = await GetRecentAsync(ct);
+        return posts.Count > 0 ? posts[0] : null;
+    }
+
+    // The newest posts of the channel, newest first (at most six).
+    public async Task<IReadOnlyList<CommunityPost>> GetRecentAsync(CancellationToken ct)
     {
         if (DateTimeOffset.UtcNow < _nextCheck) return _lastGood;
         await _lock.WaitAsync(ct);
@@ -35,12 +43,9 @@ public sealed class CommunityPostsService
                 using var response = await _http.GetAsync(PostsUrl + "?hl=en", ct);
                 response.EnsureSuccessStatusCode();
                 var html = await response.Content.ReadAsStringAsync(ct);
-                var json = ExtractInitialData(html);
-                if (json is null) throw new InvalidOperationException("YouTube page has no initial data");
-                using var document = JsonDocument.Parse(json);
-                var post = FindPost(document.RootElement);
-                if (post is null) throw new InvalidOperationException("No public post found in YouTube page");
-                _lastGood = post;
+                var posts = ParsePosts(html, MaxPosts);
+                if (posts.Count == 0) throw new InvalidOperationException("No public post found in YouTube page");
+                _lastGood = posts;
                 _nextCheck = DateTimeOffset.UtcNow.AddHours(6);
             }
             catch (Exception e)
@@ -51,6 +56,17 @@ public sealed class CommunityPostsService
             return _lastGood;
         }
         finally { _lock.Release(); }
+    }
+
+    // Reads the posts out of the HTML of the channel's Posts page.
+    public static List<CommunityPost> ParsePosts(string html, int max)
+    {
+        var json = ExtractInitialData(html);
+        if (json is null) throw new InvalidOperationException("YouTube page has no initial data");
+        using var document = JsonDocument.Parse(json);
+        var posts = new List<CommunityPost>();
+        CollectPosts(document.RootElement, posts, max);
+        return posts;
     }
 
     private static string? ExtractInitialData(string html)
@@ -80,40 +96,40 @@ public sealed class CommunityPostsService
         return null;
     }
 
-    private static CommunityPost? FindPost(JsonElement root)
+    private static void CollectPosts(JsonElement root, List<CommunityPost> posts, int max)
     {
+        if (posts.Count >= max) return;
         if (root.ValueKind == JsonValueKind.Object)
         {
-            // The first renderer in the Posts tab is normally the latest post.
+            // Posts appear in page order, newest first.
             foreach (var key in new[] { "backstagePostRenderer", "postRenderer", "postViewModel" })
             {
-                if (root.TryGetProperty(key, out var renderer))
-                {
-                    var id = FindString(renderer, "postId") ?? FindString(renderer, "postIdText");
-                    var text = ReadText(renderer, "contentText") ?? ReadText(renderer, "content") ?? ReadText(renderer, "contentTextViewModel") ?? "";
-                    var image = FindImage(renderer);
-                    var runs = ReadPostRuns(renderer);
-                    if (!string.IsNullOrWhiteSpace(id) && Regex.IsMatch(id, "^[a-zA-Z0-9_-]+$"))
-                    {
-                        return new CommunityPost(id, text, image, "https://www.youtube.com/post/" + id, runs);
-                    }
-                }
+                if (!root.TryGetProperty(key, out var renderer)) continue;
+                var id = FindString(renderer, "postId") ?? FindString(renderer, "postIdText");
+                if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, "^[a-zA-Z0-9_-]+$")) continue;
+                if (posts.Any(p => p.Id == id)) return;
+                var text = ReadText(renderer, "contentText") ?? ReadText(renderer, "content") ?? ReadText(renderer, "contentTextViewModel") ?? "";
+                var image = FindImage(renderer);
+                var runs = ReadPostRuns(renderer);
+                var published = ReadText(renderer, "publishedTimeText");
+                posts.Add(new CommunityPost(id, text, image, "https://www.youtube.com/post/" + id, runs, published));
+                // Do not descend into the post itself (it may quote another post).
+                return;
             }
             foreach (var property in root.EnumerateObject())
             {
-                var found = FindPost(property.Value);
-                if (found is not null) return found;
+                CollectPosts(property.Value, posts, max);
+                if (posts.Count >= max) return;
             }
         }
         else if (root.ValueKind == JsonValueKind.Array)
         {
             foreach (var child in root.EnumerateArray())
             {
-                var found = FindPost(child);
-                if (found is not null) return found;
+                CollectPosts(child, posts, max);
+                if (posts.Count >= max) return;
             }
         }
-        return null;
     }
 
     private static string? FindString(JsonElement element, string key)
@@ -271,8 +287,45 @@ public sealed class CommunityPostsService
         {
             if (node.TryGetProperty(key, out var attachment))
             {
-                var url = FindString(attachment, "url");
+                var url = FindLargestThumbnail(attachment) ?? FindString(attachment, "url");
                 if (url is not null && Uri.TryCreate(url, UriKind.Absolute, out var parsed) && parsed.Scheme == "https") return url;
+            }
+        }
+        return null;
+    }
+
+    // YouTube lists each picture in several sizes; the first one is tiny.
+    // Take the widest of the first picture (capped, so tiles stay light).
+    private static string? FindLargestThumbnail(JsonElement node)
+    {
+        if (node.ValueKind == JsonValueKind.Object)
+        {
+            if (node.TryGetProperty("thumbnails", out var list) && list.ValueKind == JsonValueKind.Array)
+            {
+                string? best = null;
+                var bestWidth = -1;
+                foreach (var item in list.EnumerateArray())
+                {
+                    if (item.ValueKind != JsonValueKind.Object ||
+                        !item.TryGetProperty("url", out var u) || u.ValueKind != JsonValueKind.String) continue;
+                    var width = item.TryGetProperty("width", out var w) && w.TryGetInt32(out var parsedWidth) ? parsedWidth : 0;
+                    if (width > 1280) continue;
+                    if (width > bestWidth) { bestWidth = width; best = u.GetString(); }
+                }
+                if (best is not null) return best.StartsWith("//", StringComparison.Ordinal) ? "https:" + best : best;
+            }
+            foreach (var property in node.EnumerateObject())
+            {
+                var found = FindLargestThumbnail(property.Value);
+                if (found is not null) return found;
+            }
+        }
+        else if (node.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in node.EnumerateArray())
+            {
+                var found = FindLargestThumbnail(item);
+                if (found is not null) return found;
             }
         }
         return null;
@@ -280,4 +333,4 @@ public sealed class CommunityPostsService
 }
 
 public record CommunityTextRun(string Text, string? Url);
-public record CommunityPost(string Id, string Text, string? ImageUrl, string Url, List<CommunityTextRun>? Runs = null);
+public record CommunityPost(string Id, string Text, string? ImageUrl, string Url, List<CommunityTextRun>? Runs = null, string? Published = null);

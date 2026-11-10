@@ -68,6 +68,10 @@ app.MapGet("/api/youtube/community/latest", async (CommunityPostsService posts, 
     return post is null ? Results.NoContent() : Results.Ok(post);
 });
 
+// The newest community posts (up to six), newest first. Empty list if none.
+app.MapGet("/api/youtube/community/posts", async (CommunityPostsService posts, CancellationToken ct) =>
+    Results.Ok(await posts.GetRecentAsync(ct)));
+
 app.MapGet("/api/status", (YouTubeService yt, IConfiguration cfg) => Results.Ok(new
 {
     configured = yt.IsConfigured,
@@ -114,7 +118,7 @@ app.MapGet("/api/youtube/comments/{videoId}", async (string videoId, YouTubeServ
 app.MapGet("/api/app-version", (HttpContext context) =>
 {
     context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
-    return Results.Ok(new { version = "2.0.7" });
+    return Results.Ok(new { version = "2.1.1" });
 });
 
 
