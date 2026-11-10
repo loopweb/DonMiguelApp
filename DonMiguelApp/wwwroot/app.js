@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.5.0';
+const APP_VERSION='2.5.2';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -831,17 +831,13 @@ function scheduleNewsRetry(){
   newsRetryTimer=setTimeout(()=>{newsRetryTimer=null;loadNews();},20000*newsRetries);
 }
 
-const EMPTY_TILE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+// Shown in the tile of every post without a picture; the text is in the opened post.
+const NEWS_FALLBACK_IMAGE='/assets/news-fallback.jpg';
 
 function renderNewsGrid(){
   els.newsGrid.innerHTML=newsPosts.map((post,index)=>{
     const text=String(post.text||'').trim();
-    // Picture if the post has one, otherwise its first lines, otherwise an icon.
-    const media=post.imageUrl
-      ?`<img src="${esc(post.imageUrl)}" alt="" loading="lazy">`
-      :text
-        ?`<span class="news-tile-excerpt">${esc(text.slice(0,260))}</span>`
-        :`<span class="news-tile-empty">${EMPTY_TILE_ICON}</span>`;
+    const media=`<img src="${esc(post.imageUrl||NEWS_FALLBACK_IMAGE)}" alt="" loading="lazy">`;
     const label=text?text.replace(/\s+/g,' ').slice(0,80):'Community post';
     return `<button class="news-tile" type="button" data-post="${index}" aria-label="Open post: ${esc(label)}"><span class="news-tile-media">${media}</span>${post.published?`<span class="news-tile-date">${esc(post.published)}</span>`:''}</button>`;
   }).join('');

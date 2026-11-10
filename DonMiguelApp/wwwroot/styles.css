@@ -239,9 +239,6 @@ button.action-btn{font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
 .news-tile-media{display:block;position:relative;aspect-ratio:1/1;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
 .news-tile-media img{display:block;width:100%;height:100%;object-fit:cover}
 /* post without a picture: its first lines stand in for the image */
-.news-tile-excerpt{display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden;margin:12px;font-size:.84rem;line-height:1.45;white-space:pre-line;overflow-wrap:anywhere}
-.news-tile-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.news-tile-empty svg{width:34px;height:34px}
 .news-tile-date{display:block;padding:0 2px;font-size:.74rem;color:var(--muted)}
 .news-tile:active .news-tile-media{border-color:var(--accent)}
 
