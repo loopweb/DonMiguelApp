@@ -1,8 +1,8 @@
 self.addEventListener('message',event=>{
   if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
 });
-const CACHE='donmiguel-v2.2.0';
-const ASSETS=['/','/index.html','/styles.css?v=2.2.0','/app.js?v=2.2.0','/manifest.webmanifest','/assets/dmc-mark.png','/assets/icons/icon-192.png'];
+const CACHE='donmiguel-v2.3.1';
+const ASSETS=['/','/index.html','/styles.css?v=2.3.1','/app.js?v=2.3.1','/manifest.webmanifest','/assets/dmc-mark.png','/assets/icons/icon-192.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 

@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.2.0';
+const APP_VERSION='2.3.1';
 
 const PLAYLISTS = Object.freeze({
   'All': 'PLrIIvPdks_sFn2nPjFm_nCTdAYuC7Z2SJ',
@@ -69,18 +69,18 @@ const els={
   preloader:$('#appPreloader'),preloaderText:$('#preloaderText'),app:$('#app'),content:$('#content'),
   videoFrame:$('#videoFrame'),exitCinema:$('#exitCinemaButton'),fullscreen:$('#fullscreenButton'),
   seek:$('#seekBar'),timeCurrent:$('#timeCurrent'),timeTotal:$('#timeTotal'),
-  nowTitle:$('#nowTitle'),nowMeta:$('#nowMeta'),
+  nowTitle:$('#nowTitle'),
   play:$('#playPauseButton'),prev:$('#previousButton'),next:$('#nextButton'),
   shuffle:$('#shuffleButton'),repeat:$('#repeatButton'),
   commentsButton:$('#commentsButton'),commentBadge:$('#commentBadge'),
   sheet:$('#commentsSheet'),sheetHead:$('#commentsSheetHead'),comments:$('#comments'),
   commentCount:$('#commentCount'),closeComments:$('#closeComments'),
   poster:$('#heroPoster'),posterImage:$('#heroImage'),
-  infoTitle:$('#infoTitle'),infoMeta:$('#infoMeta'),descriptionText:$('#descriptionText'),
+  infoTitle:$('#infoTitle'),infoMeta:$('#infoMeta'),infoSubscriberCount:$('#infoSubscriberCount'),infoYoutubeLink:$('#infoYoutubeLink'),descriptionText:$('#descriptionText'),
   newsStatus:$('#newsStatus'),newsGrid:$('#newsGrid'),
   postSheet:$('#postSheet'),postSheetHead:$('#postSheetHead'),postDate:$('#postDate'),
   postImage:$('#postImage'),postText:$('#postText'),closePost:$('#closePost'),
-  search:$('#searchInput'),genres:$('#genreBar'),libraryHeading:$('#libraryHeading'),
+  search:$('#searchInput'),searchBox:$('#searchBox'),searchToggle:$('#searchToggle'),genres:$('#genreBar'),libraryHeading:$('#libraryHeading'),
   count:$('#trackCount'),status:$('#statusBox'),list:$('#trackList'),
   tabs:[...document.querySelectorAll('.tab[data-view]')],
   views:{
@@ -116,23 +116,64 @@ function formatSubscribers(value){
   return String(n);
 }
 
-/* ---------- Preloader ---------- */
+/* ---------- Preloader: the logo fills with the real loading progress ----------
+   Each finished loading step raises the water. While a step is still running
+   (e.g. the server waking up) the water keeps creeping up slowly, so it never
+   looks frozen. It never fills faster than ~2.6 s, so it always looks calm. */
 
-const preloaderStartedAt=Date.now();
+const PRELOADER_STAGES={server:.3,data:.65,ready:.85,done:1};
+const preloader={level:0,creep:0,shown:0,done:false};
+const preloaderWater=document.querySelector('.preloader-water');
 let preloaderClosed=false;
+let preloaderLastFrame=performance.now();
 function setPreloaderText(text){if(els.preloaderText)els.preloaderText.textContent=text;}
+function markStage(name){
+  const value=PRELOADER_STAGES[name]||0;
+  if(value>preloader.level)preloader.level=value;
+  if(preloader.creep<preloader.level)preloader.creep=preloader.level;
+  if(name==='done')preloader.done=true;
+}
+function preloaderFrame(now){
+  if(preloaderClosed)return;
+  const dt=Math.min(.1,Math.max(0,(now-preloaderLastFrame)/1000));
+  preloaderLastFrame=now;
+  if(!preloader.done){
+    const cap=Math.min(preloader.level+.17,.95);
+    preloader.creep+=(cap-preloader.creep)*(1-Math.exp(-dt/5));
+  }
+  const target=preloader.done?1:Math.max(preloader.level,preloader.creep);
+  preloader.shown=Math.min(target,preloader.shown+dt*.38);
+  preloaderWater?.style.setProperty('--level',preloader.shown.toFixed(4));
+  if(preloader.done&&preloader.shown>=1){
+    window.setTimeout(closePreloader,250);
+    return;
+  }
+  requestAnimationFrame(preloaderFrame);
+}
+requestAnimationFrame(preloaderFrame);
 function closePreloader(){
   if(preloaderClosed)return;
   preloaderClosed=true;
-  const delay=Math.max(0,1600-(Date.now()-preloaderStartedAt));
-  window.setTimeout(()=>{
-    document.body.classList.remove('is-loading');
-    els.app?.removeAttribute('aria-hidden');
-    els.preloader?.classList.add('is-hidden');
-    window.setTimeout(()=>els.preloader?.remove(),400);
-  },delay);
+  document.body.classList.remove('is-loading');
+  els.app?.removeAttribute('aria-hidden');
+  els.preloader?.classList.add('is-hidden');
+  window.setTimeout(()=>els.preloader?.remove(),400);
 }
-window.setTimeout(closePreloader,8000);
+// Never keep people waiting longer than this; the app shows its own loading states.
+window.setTimeout(()=>markStage('done'),15000);
+// If the page is in the background, animation frames pause: close right away instead.
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&preloader.done)closePreloader();});
+
+let resolvePlayerReady;
+const playerReadyPromise=new Promise(resolve=>{resolvePlayerReady=resolve;});
+function imageLoaded(img){
+  return new Promise(resolve=>{
+    if(!img||img.hidden||!img.getAttribute('src')||img.complete)return resolve();
+    img.addEventListener('load',resolve,{once:true});
+    img.addEventListener('error',resolve,{once:true});
+  });
+}
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 function wakeServer(){
   fetch('/health',{method:'GET',cache:'no-store',credentials:'same-origin'}).catch(()=>{});
@@ -152,14 +193,17 @@ async function fetchPlaylist(genre,force=false){
 
 async function load(){
   setPreloaderText('Loading');
+  loadNews();
   try{
     const status=await fetch('/api/status').then(check);
+    markStage('server');
     if(!status.configured)throw new Error('YouTube API key is not configured.');
     const [allTracks,latest,channelInfo]=await Promise.all([
       fetchPlaylist('All'),
       fetch(`/api/youtube/latest?_=${Date.now()}`,{cache:'no-store'}).then(check),
       fetch(`/api/youtube/channel?_=${Date.now()}`,{cache:'no-store'}).then(check)
     ]);
+    markStage('data');
     state.subscriberCount=Number(channelInfo?.subscriberCount)||0;
     state.videos=allTracks;
     state.latestVideo=latest||state.videos[0]||null;
@@ -169,15 +213,18 @@ async function load(){
     els.status.hidden=true;
     const first=state.latestVideo?.id||state.videos[0]?.id;
     if(first)selectTrack(first,false);
+    // Last step: the release picture and the YouTube player are ready.
+    const posterReady=imageLoaded(els.posterImage).then(()=>markStage('ready'));
+    const playerReady=playerReadyPromise.then(()=>markStage('ready'));
+    await Promise.race([Promise.all([posterReady,playerReady]),sleep(5000)]);
   }catch(e){
     els.status.textContent=e.message;
     els.status.hidden=false;
     els.poster.classList.remove('is-loading-card');
     els.nowTitle.textContent='Content unavailable';
   }finally{
-    closePreloader();
+    markStage('done');
   }
-  loadNews();
 }
 
 function findVideo(id){
@@ -264,6 +311,10 @@ function renderInfo(video){
   if(video?.viewCount)parts.push(`${compact(video.viewCount)} views`);
   if(video?.duration)parts.push(video.duration);
   els.infoMeta.textContent=parts.join(' · ');
+  els.infoSubscriberCount.textContent=state.subscriberCount?formatSubscribers(state.subscriberCount):'';
+  els.infoYoutubeLink.href=video?.id
+    ?`https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}`
+    :'https://www.youtube.com/@migflow';
 
   const text=String(video?.description||'').trim();
   if(text){
@@ -329,6 +380,23 @@ function markCurrentTrack(){
 
 els.search.addEventListener('input',e=>{state.query=e.target.value;applyFilters();});
 
+// The magnifier next to the title opens the search; closing it also clears it,
+// so no filtered list is left behind unnoticed.
+function setSearchOpen(open){
+  els.searchBox.hidden=!open;
+  els.searchToggle.setAttribute('aria-expanded',open?'true':'false');
+  els.searchToggle.setAttribute('aria-label',open?'Close search':'Search tracks');
+  if(open){
+    els.search.focus();
+  }else if(state.query){
+    els.search.value='';
+    state.query='';
+    applyFilters();
+  }
+}
+els.searchToggle.addEventListener('click',()=>setSearchOpen(els.searchBox.hidden));
+els.search.addEventListener('keydown',e=>{if(e.key==='Escape'){setSearchOpen(false);els.searchToggle.focus();}});
+
 /* ---------- External links (More tab) ---------- */
 
 // Compact text tiles, no logos, two per row. A featured link gets a full-width
@@ -359,9 +427,6 @@ function selectTrack(id,shouldPlay=true){
   state.pendingPlay=!!shouldPlay;
   if(shouldPlay)dismissPoster();
   els.nowTitle.textContent=displayTitle(v.title);
-  const meta=['Don Miguel de Cabarete'];
-  if(v.viewCount)meta.push(`${compact(v.viewCount)} views`);
-  els.nowMeta.textContent=meta.join(' · ');
   updateCommentBadge(v);
   renderInfo(v);
   resetProgress(v.duration);
@@ -495,6 +560,7 @@ function initYouTubeIframePlayer(){
     events:{
       onReady:()=>{
         state.playerReady=true;
+        resolvePlayerReady();
         const id=state.pendingVideoId||state.selectedId;
         if(id){
           if(state.pendingPlay)state.player.loadVideoById(id);

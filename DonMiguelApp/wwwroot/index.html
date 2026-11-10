@@ -17,7 +17,7 @@
   </script>
   <link rel="preload" as="image" href="/assets/dmc-mark.png">
   <meta name="description" content="Official app of Don Miguel de Cabarete">
-  <link rel="stylesheet" href="/styles.css?v=2.2.0">
+  <link rel="stylesheet" href="/styles.css?v=2.3.1">
   <title>Don Miguel de Cabarete</title>
 
   <link rel="manifest" href="/manifest.webmanifest">
@@ -116,7 +116,6 @@ console.error('OneSignal init failed', error);
       <div class="now-row">
         <div class="now-text">
           <strong id="nowTitle">Loading …</strong>
-          <small id="nowMeta">Don Miguel de Cabarete</small>
         </div>
         <button id="commentsButton" class="icon-btn" type="button" aria-label="Show comments" aria-controls="commentsSheet" aria-expanded="false">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -155,8 +154,14 @@ console.error('OneSignal init failed', error);
       </section>
 
       <section id="view-library" class="view" aria-labelledby="libraryTitle" hidden>
-        <h1 id="libraryTitle" class="view-title">Library</h1>
-        <label class="search">
+        <div class="view-title-row">
+          <h1 id="libraryTitle" class="view-title">Library</h1>
+          <button id="searchToggle" class="icon-btn search-toggle" type="button" aria-label="Search tracks" aria-expanded="false" aria-controls="searchBox">
+            <svg class="icon-search" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <svg class="icon-close" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <label id="searchBox" class="search" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
           <span class="sr-only">Search tracks</span>
           <input id="searchInput" type="search" placeholder="Search title or keyword …" autocomplete="off" enterkeyhint="search">
@@ -172,6 +177,10 @@ console.error('OneSignal init failed', error);
           <h1 id="infoTitle" class="view-title">Loading …</h1>
           <p id="infoMeta" class="info-meta"></p>
         </header>
+        <div class="info-actions">
+          <a id="infoSubscribe" class="action-btn is-primary" href="https://www.youtube.com/channel/UCCujh8Bdc8hhaMI9CjhF-6w?sub_confirmation=1" target="_blank" rel="noopener">Subscribe<span id="infoSubscriberCount" class="action-count"></span></a>
+          <a id="infoYoutubeLink" class="action-btn" href="https://www.youtube.com/@migflow" target="_blank" rel="noopener">Like / Comment<b aria-hidden="true">↗</b></a>
+        </div>
         <div class="section-head"><h2>Description</h2></div>
         <div class="description">
           <p id="descriptionText" class="post-text muted">Loading …</p>
@@ -208,9 +217,7 @@ console.error('OneSignal init failed', error);
         <div class="row-list">
           <a class="row" href="#legal-notice" data-open-legal="imprint"><span>Legal Notice</span><b aria-hidden="true">›</b></a>
           <a class="row" href="#privacy-policy" data-open-legal="privacy"><span>Privacy Policy</span><b aria-hidden="true">›</b></a>
-          <a class="row" href="https://www.youtube.com/t/terms" target="_blank" rel="noopener"><span>YouTube Terms of Service</span><b aria-hidden="true">↗</b></a>
-          <a class="row" href="https://policies.google.com/privacy" target="_blank" rel="noopener"><span>Google Privacy Policy</span><b aria-hidden="true">↗</b></a>
-          <div class="row"><span>App Version</span><small>2.2.0</small></div>
+          <div class="row"><span>App Version</span><small>2.3.1</small></div>
         </div>
       </section>
     </main>
@@ -321,6 +328,7 @@ Email: <a href="mailto:donmiguel@vodafonemail.de">donmiguel@vodafonemail.de</a><
 
 <h2>4. YouTube</h2>
 <p>Music and video content is provided through YouTube, a Google service. When YouTube content is requested or played, a connection to Google/YouTube servers is established. Google may process technical information such as IP address, device and browser information and interactions with the content. If you are signed in to a Google account, activity may be associated with that account. Google's own privacy terms apply to processing by Google.</p>
+<p>This app uses YouTube API Services to show music, videos, comments and channel information. By using the app, you agree to be bound by the <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Terms of Service</a>. Google's handling of data is described in the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.</p>
 
 <h2>5. Push notifications (OneSignal)</h2>
 <p>Push notifications are optional and are used primarily to inform users about new music releases. Notifications are enabled only after the user actively chooses to enable them and grants the required browser or operating-system permission.</p>
@@ -356,6 +364,6 @@ Email: <a href="mailto:donmiguel@vodafonemail.de">donmiguel@vodafonemail.de</a><
     </div>
   </dialog>
 
-  <script src="/app.js?v=2.2.0" defer></script>
+  <script src="/app.js?v=2.3.1" defer></script>
 </body>
 </html>
