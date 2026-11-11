@@ -309,11 +309,29 @@ a.row:active,button.row:active{background:var(--press)}
 
 /* ---------- Pull to refresh: a small dot in the top right corner ----------
    faint while pulling, solid once far enough, blinking while loading */
-.refresh-dot{flex:0 0 auto;width:10px;height:10px;margin-left:auto;border-radius:50%;background:var(--text);opacity:0;transition:opacity .15s}
-.refresh-dot.visible{opacity:.3}
-.refresh-dot.ready{opacity:1}
-.refresh-dot.refreshing{opacity:1;animation:refreshBlink .8s ease-in-out infinite}
-@keyframes refreshBlink{50%{opacity:.15}}
+/* Pull-to-refresh pill in the header, top right */
+.refresh-pill{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 12px 0 8px;border-radius:14px;background:var(--accent);color:#fff;font-size:.78rem;font-weight:700;white-space:nowrap;opacity:0;transform:scale(.85);transition:opacity .15s,transform .15s;pointer-events:none}
+.refresh-pill.visible{opacity:calc(.35 + .65 * var(--p,1));transform:scale(calc(.85 + .15 * var(--p,1)))}
+.refresh-ring{width:14px;height:14px;border-radius:50%;background:conic-gradient(#fff calc(var(--p,1) * 360deg),rgba(255,255,255,.3) 0);-webkit-mask:radial-gradient(circle,transparent 4.5px,#000 5px);mask:radial-gradient(circle,transparent 4.5px,#000 5px)}
+.refresh-pill.refreshing .refresh-ring{background:conic-gradient(#fff 0 270deg,rgba(255,255,255,.3) 0);animation:refreshSpin .8s linear infinite}
+.refresh-pill.done .refresh-ring,.refresh-pill.failed .refresh-ring{-webkit-mask:none;mask:none;background:none;position:relative}
+.refresh-pill.done .refresh-ring::after{content:"";position:absolute;left:4px;top:1px;width:5px;height:9px;border:solid #fff;border-width:0 2.2px 2.2px 0;transform:rotate(45deg)}
+.refresh-pill.failed{background:var(--muted)}
+.refresh-pill.failed .refresh-ring::after{content:"!";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900}
+@keyframes refreshSpin{to{transform:rotate(360deg)}}
+
+/* Full screen from the button (see app.js). The video keeps 16:9 and leaves a
+   strip beside it for the exit button, so nothing is laid over the picture. */
+.video-frame:fullscreen{width:100%;height:100%;aspect-ratio:auto;min-height:0;background:#000}
+.video-frame:-webkit-full-screen{width:100%;height:100%;aspect-ratio:auto;min-height:0;background:#000}
+body.cinema .video-frame{position:fixed;inset:0;z-index:100;width:100vw;height:100vh;height:100dvh;aspect-ratio:auto;min-height:0;background:#000}
+.video-frame.fs > #youtubePlayer{position:absolute;inset:auto;top:50%;left:50%;width:min(calc(100vw - 128px),calc(100dvh * 16 / 9));height:auto;aspect-ratio:16 / 9;transform:translate(-50%,-50%)}
+.video-frame.fs.rotate > #youtubePlayer{width:min(calc(100dvh - 128px),calc(100vw * 16 / 9));transform:translate(-50%,-50%) rotate(90deg)}
+.video-frame.fs > .poster{display:none}
+.exit-fs{position:absolute;z-index:3;right:calc(10px + env(safe-area-inset-right,0px));bottom:calc(10px + var(--safe-bottom));width:44px;height:44px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center}
+.exit-fs[hidden]{display:none}
+.exit-fs svg{width:20px;height:20px}
+.video-frame.rotate > .exit-fs{right:auto;left:calc(10px + env(safe-area-inset-left,0px));transform:rotate(90deg)}
 
 /* ---------- Legal dialogs (content unchanged from 1.x) ---------- */
 .legal-dialog{width:min(100% - 20px,680px);max-height:calc(100dvh - 32px);padding:0;border:1px solid var(--line);border-radius:18px;background:var(--sheet);color:var(--text)}
@@ -380,7 +398,7 @@ a.row:active,button.row:active{background:var(--press)}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .is-loading-card,.sheet,.app.is-playing .track.is-current .eq i,.preloader-water::before,.refresh-dot.refreshing{animation:none!important}
+  .is-loading-card,.sheet,.app.is-playing .track.is-current .eq i,.preloader-water::before,.refresh-pill.refreshing .refresh-ring{animation:none!important}
   .app-preloader p{animation:none}
   .app-preloader,.switch,.switch::after{transition:none}
 }

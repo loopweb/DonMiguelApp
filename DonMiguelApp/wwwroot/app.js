@@ -128,7 +128,7 @@ const els={
   seek:$('#seekBar'),timeCurrent:$('#timeCurrent'),timeTotal:$('#timeTotal'),
   nowTitle:$('#nowTitle'),
   play:$('#playPauseButton'),prev:$('#previousButton'),next:$('#nextButton'),
-  shuffle:$('#shuffleButton'),repeat:$('#repeatButton'),
+  shuffle:$('#shuffleButton'),fullscreen:$('#fullscreenButton'),exitFullscreen:$('#exitFullscreenButton'),
   commentsButton:$('#commentsButton'),commentBadge:$('#commentBadge'),
   sheet:$('#commentsSheet'),sheetHead:$('#commentsSheetHead'),comments:$('#comments'),
   commentCount:$('#commentCount'),closeComments:$('#closeComments'),
@@ -600,10 +600,8 @@ els.prev.addEventListener('click',()=>{
 });
 els.next.addEventListener('click',()=>step(1));
 els.shuffle.addEventListener('click',()=>{state.shuffle=!state.shuffle;setToggle(els.shuffle,state.shuffle);});
-els.repeat.addEventListener('click',()=>{
-  state.repeat=!state.repeat;
-  setToggle(els.repeat,state.repeat);
-  els.repeat.setAttribute('aria-label',state.repeat?'Repeat this track: on':'Repeat');
+els.fullscreen.addEventListener('click',()=>{
+  enterFullscreen();
 });
 
 /* Progress bar */
@@ -714,12 +712,58 @@ function loadYouTubeIframeApi(){
 loadYouTubeIframeApi();
 
 /* ---------- Full screen ----------
-   No button: turning the phone sideways makes the video fill the screen
-   (see the landscape rule in styles.css). */
+   Turning the phone sideways fills the screen by itself (landscape rule in
+   styles.css). The button in the controls does it on demand, also with the
+   rotation lock on: Android gets real full screen turned to landscape; on
+   iPhone (no full screen or rotation for web pages) the video is laid over the
+   whole screen turned 90°. The exit button sits in the black strip beside the
+   video, never on the picture. */
+function fullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement||null;}
+const portraitQuery=window.matchMedia('(orientation: portrait)');
+function isFullscreenActive(){return !!fullscreenElement()||document.body.classList.contains('cinema');}
+function updateFullscreenLayout(){
+  const on=isFullscreenActive();
+  els.videoFrame.classList.toggle('fs',on);
+  els.videoFrame.classList.toggle('rotate',on&&portraitQuery.matches);
+  els.exitFullscreen.hidden=!on;
+}
+if(portraitQuery.addEventListener)portraitQuery.addEventListener('change',updateFullscreenLayout);
+else if(portraitQuery.addListener)portraitQuery.addListener(updateFullscreenLayout);
+function enterCinema(){
+  document.body.classList.add('cinema');
+  updateFullscreenLayout();
+}
+function enterFullscreen(){
+  dismissPoster();
+  const frame=els.videoFrame;
+  const request=frame.requestFullscreen||frame.webkitRequestFullscreen;
+  if(!request){enterCinema();return;}
+  try{
+    const result=request.call(frame);
+    if(result&&typeof result.catch==='function')result.catch(enterCinema);
+  }catch{enterCinema();}
+}
+function leaveFullscreen(){
+  if(fullscreenElement()){
+    const exit=document.exitFullscreen||document.webkitExitFullscreen;
+    try{exit?.call(document);}catch{}
+  }
+  document.body.classList.remove('cinema');
+  updateFullscreenLayout();
+}
+async function onFullscreenChange(){
+  if(fullscreenElement()){try{await screen.orientation?.lock?.('landscape');}catch{}}
+  else{try{screen.orientation?.unlock?.();}catch{}}
+  updateFullscreenLayout();
+}
+els.exitFullscreen.addEventListener('click',leaveFullscreen);
+document.addEventListener('fullscreenchange',onFullscreenChange);
+document.addEventListener('webkitfullscreenchange',onFullscreenChange);
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
-  if(!els.postSheet.hidden)closePost();
+  if(isFullscreenActive())leaveFullscreen();
+  else if(!els.postSheet.hidden)closePost();
   else if(!els.sheet.hidden)closeComments();
 });
 
@@ -809,15 +853,23 @@ async function refreshVisibleContent(){
 }
 
 function setupPullToRefresh(){
-  // The indicator is a dot in the top right corner of the header: faint while
-  // pulling, solid once the pull is far enough, blinking while content loads.
+  // The indicator is a small petrol pill in the top right corner of the
+  // header: it grows in while pulling, spins with "Updating" while content
+  // loads, then shows "Updated" (or "Offline") for a moment.
   const dot=$('#pullRefreshIndicator');
+  const label=dot?.querySelector('.refresh-label');
   const scroller=els.content;
   if(!dot||!scroller)return;
   const threshold=74;
-  let startY=0,distance=0,tracking=false;
+  let startY=0,distance=0,tracking=false,hideTimer=null;
 
-  function hideDot(){dot.classList.remove('visible','ready','refreshing');}
+  function setPill(state,text,progress){
+    clearTimeout(hideTimer);
+    dot.className=`refresh-pill ${state}`;
+    label.textContent=text;
+    dot.style.setProperty('--p',String(progress??1));
+  }
+  function hideDot(){dot.className='refresh-pill';dot.style.removeProperty('--p');}
 
   scroller.addEventListener('touchstart',e=>{
     if(pullRefreshBusy||scroller.scrollTop>0||e.touches.length!==1||!els.sheet.hidden||!els.postSheet.hidden)return;
@@ -837,8 +889,8 @@ function setupPullToRefresh(){
     distance=Math.min(110,delta*.55);
     if(distance<8)return;
     e.preventDefault();
-    dot.classList.add('visible');
-    dot.classList.toggle('ready',distance>=threshold);
+    const ready=distance>=threshold;
+    setPill(ready?'visible ready':'visible',ready?'Release to update':'Pull to update',Math.min(1,distance/threshold));
   },{passive:false});
 
   scroller.addEventListener('touchend',async()=>{
@@ -846,11 +898,11 @@ function setupPullToRefresh(){
     tracking=false;
     if(distance<threshold){hideDot();return;}
     distance=0;
-    dot.classList.remove('ready');
-    dot.classList.add('visible','refreshing');
-    // Blink at least briefly, so a fast refresh is still noticed.
-    await Promise.all([refreshVisibleContent(),new Promise(resolve=>setTimeout(resolve,900))]);
-    hideDot();
+    setPill('visible refreshing','Updating');
+    // Spin at least briefly, so a fast refresh is still noticed.
+    const [ok]=await Promise.all([refreshVisibleContent(),new Promise(resolve=>setTimeout(resolve,900))]);
+    setPill(ok?'visible done':'visible failed',ok?'Updated':'Offline');
+    hideTimer=setTimeout(hideDot,1400);
   },{passive:true});
 
   scroller.addEventListener('touchcancel',()=>{tracking=false;distance=0;hideDot();},{passive:true});
