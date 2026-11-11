@@ -216,8 +216,11 @@ function closePreloader(){
   els.preloader?.classList.add('is-hidden');
   window.setTimeout(()=>els.preloader?.remove(),400);
 }
-// Never keep people waiting longer than this; the app shows its own loading states.
-window.setTimeout(()=>markStage('done'),15000);
+// The free server sleeps when unused and can need up to a minute to wake up,
+// so the preloader waits that long before showing the app without data.
+window.setTimeout(()=>markStage('done'),60000);
+// After a few seconds without an answer, say why it takes longer.
+window.setTimeout(()=>{if(preloader.level<PRELOADER_STAGES.server)setPreloaderText('Waking up …');},3000);
 // If the page is in the background, animation frames pause: close right away instead.
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&preloader.done)closePreloader();});
 
@@ -231,6 +234,22 @@ function imageLoaded(img){
   });
 }
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
+// Asks the server until it answers (while it wakes up, requests can fail).
+async function waitForServer(){
+  const until=Date.now()+60000;
+  for(;;){
+    try{
+      const response=await fetch(`/api/status?_=${Date.now()}`,{cache:'no-store'});
+      if(response.ok)return await response.json();
+      if(response.status<500)throw new Error(`Server error ${response.status}`);
+    }catch(e){
+      if(Date.now()>until)throw e;
+    }
+    if(Date.now()>until)throw new Error('The server is not answering. Please try again later.');
+    await sleep(2000);
+  }
+}
 
 function wakeServer(){
   fetch('/health',{method:'GET',cache:'no-store',credentials:'same-origin'}).catch(()=>{});
@@ -252,8 +271,9 @@ async function load(){
   setPreloaderText('Loading');
   loadNews();
   try{
-    const status=await fetch('/api/status').then(check);
+    const status=await waitForServer();
     markStage('server');
+    setPreloaderText('Loading');
     if(!status.configured)throw new Error('YouTube API key is not configured.');
     const [allTracks,latest,channelInfo]=await Promise.all([
       fetchPlaylist('All'),
