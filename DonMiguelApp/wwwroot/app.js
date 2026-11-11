@@ -662,6 +662,19 @@ els.seek.addEventListener('change',()=>{
 });
 
 /* YouTube IFrame player — created once inside the always-visible stage. */
+// Subtitles off. YouTube may switch them on by itself (iPhone accessibility
+// setting, YouTube account setting), and with its own controls hidden nobody
+// could turn them off. These player commands are not in YouTube's official
+// documentation but widely used; if they stop working, nothing breaks.
+function hideCaptions(){
+  const player=state.player;
+  if(!player)return;
+  for(const name of ['captions','cc']){
+    try{player.unloadModule?.(name);}catch{}
+  }
+  try{player.setOption?.('captions','track',{});}catch{}
+}
+
 function initYouTubeIframePlayer(){
   if(state.player||state.playerInitStarted)return;
   if(!(window.YT&&YT.Player))return;
@@ -697,6 +710,7 @@ function initYouTubeIframePlayer(){
         if(state.playing){
           state.pendingPlay=false;
           state.pendingVideoId=null;
+          hideCaptions();
         }
         syncPlayIcons();
         if(e.data===YT.PlayerState.ENDED){
