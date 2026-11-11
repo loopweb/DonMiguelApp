@@ -1,6 +1,6 @@
 'use strict';
 
-const APP_VERSION='2.7.4';
+const APP_VERSION='2.7.5';
 
 // The main playlists, always shown first and in this order. All other public
 // playlists of the channel are added behind them automatically (newest first).
@@ -350,6 +350,17 @@ async function refreshLatestRelease(){
     if(!latest?.id||state.latestVideo?.id===latest.id)return;
     state.latestVideo=latest;
     renderRelease();
+    // A new release came out while the app was in the background (e.g. opened
+    // from a push). Reload the list quietly so the song is in the library too.
+    try{
+      const fresh=await fetchPlaylist(state.genre||'All',true);
+      state.videos=fresh;
+      applyFilters();
+    }catch{/* the old list stays */}
+    uploadsPromise=null; // search fetches the uploads again next time
+    // Nothing played since opening: put the new song into the player (title,
+    // info, comments). It starts only on Play. Music that runs is not touched.
+    if(!posterDismissed&&!state.playing)selectTrack(latest.id,false);
   }catch{/* keep what is shown */}
 }
 
