@@ -208,6 +208,9 @@ console.error('OneSignal init failed', error);
               <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
             </div>
           </div>
+          <button id="installRow" class="row" type="button" hidden>
+            <span class="row-text"><strong>Install app</strong><small>Add to your home screen</small></span><b aria-hidden="true">›</b>
+          </button>
         </div>
 
         <div class="section-head section-gap"><h2>External links</h2><span>Open outside the app</span></div>
@@ -255,6 +258,17 @@ console.error('OneSignal init failed', error);
         <p id="postText" class="post-text" hidden></p>
       </div>
     </section>
+
+    <!-- "Add to home screen" hint: after 30 s, only in the browser on phones. -->
+    <div id="installCard" class="install-card" role="dialog" aria-labelledby="installTitle" hidden>
+      <div class="install-copy">
+        <strong id="installTitle">Get the app</strong>
+        <span id="installAndroid">Add Don Miguel to your home screen.</span>
+        <span id="installIos" hidden>Tap <svg class="share-icon" viewBox="0 0 24 24" aria-label="Share" role="img" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg> then “Add to Home Screen”.</span>
+      </div>
+      <button id="installAction" class="install-btn" type="button">Install</button>
+      <button id="installClose" class="install-close" type="button" aria-label="Not now"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
 
     <nav class="tabbar" aria-label="Main">
       <button class="tab" type="button" data-view="home" aria-current="page">

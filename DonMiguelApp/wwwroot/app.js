@@ -1186,6 +1186,68 @@ async function setupPwaUpdater(){
   }
 }
 
+/* ---------- Add to home screen ----------
+   Android: the browser offers installing; our "Install" button opens its
+   dialog. iPhone: no such dialog for web pages, so the card explains it
+   (Share, then "Add to Home Screen"). Shown after 30 seconds, only in the
+   browser on phones, and not again for 30 days after "✕". */
+const INSTALL_DISMISSED_KEY='dmc-install-dismissed';
+let installPrompt=null;
+let installDue=false;
+const installCard=$('#installCard');
+function installAvailable(){
+  if(isStandaloneApp())return false;
+  return !!installPrompt||isIOSDevice();
+}
+function installDismissedRecently(){
+  try{return Date.now()-Number(localStorage.getItem(INSTALL_DISMISSED_KEY)||0)<30*24*3600*1000;}catch{return false;}
+}
+function updateInstallRow(){
+  const row=$('#installRow');
+  if(row)row.hidden=!installAvailable();
+}
+function showInstallCard(){
+  if(!installCard||!installAvailable())return;
+  const ios=!installPrompt&&isIOSDevice();
+  $('#installIos').hidden=!ios;
+  $('#installAndroid').hidden=ios;
+  $('#installAction').hidden=ios;
+  const tabbar=document.querySelector('.tabbar');
+  installCard.style.bottom=`${(tabbar?.getBoundingClientRect().height||0)+10}px`;
+  installCard.hidden=false;
+}
+function hideInstallCard(remember){
+  if(installCard)installCard.hidden=true;
+  if(remember){try{localStorage.setItem(INSTALL_DISMISSED_KEY,String(Date.now()));}catch{}}
+}
+async function runInstall(){
+  if(!installPrompt){showInstallCard();return;}
+  const prompt=installPrompt;
+  installPrompt=null;
+  hideInstallCard(false);
+  try{
+    prompt.prompt();
+    const choice=await prompt.userChoice;
+    if(choice?.outcome!=='accepted')hideInstallCard(true);
+  }catch{}
+  updateInstallRow();
+}
+function maybeShowInstallCard(){
+  const phone=window.matchMedia('(pointer: coarse)').matches;
+  if(installDue&&phone&&!installDismissedRecently())showInstallCard();
+}
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  installPrompt=e;
+  updateInstallRow();
+  maybeShowInstallCard();
+});
+window.addEventListener('appinstalled',()=>{installPrompt=null;hideInstallCard(false);updateInstallRow();});
+$('#installAction')?.addEventListener('click',runInstall);
+$('#installClose')?.addEventListener('click',()=>hideInstallCard(true));
+$('#installRow')?.addEventListener('click',runInstall);
+setTimeout(()=>{installDue=true;maybeShowInstallCard();},30000);
+
 /* ---------- Push notifications (OneSignal) ---------- */
 
 let oneSignalUiReady=false;
@@ -1302,3 +1364,4 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('pageshow',()=>setTimeout(refreshLatestRelease,250));
 window.addEventListener('focus',()=>setTimeout(refreshLatestRelease,250));
+updateInstallRow();
